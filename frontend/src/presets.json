@@ -1,0 +1,79 @@
+[
+  {
+    "id": "react",
+    "name": "Static / React (Vite)",
+    "description": "Single Page App served via HTTP server",
+    "icon": "Box",
+    "config": {
+      "language_version": "node@20",
+      "build_command": "npm install && npm run build",
+      "start_command": "npx serve -s dist -l $PORT"
+    }
+  },
+  {
+    "id": "node",
+    "name": "Node.js API",
+    "description": "Standard Node.js server (npm start)",
+    "icon": "Terminal",
+    "config": {
+      "language_version": "node@20",
+      "build_command": "npm install",
+      "start_command": "npm start"
+    }
+  },
+  {
+    "id": "python-fastapi",
+    "name": "Python (FastAPI/Uvicorn)",
+    "description": "Python 3.12 with Uvicorn",
+    "icon": "Play",
+    "config": {
+      "language_version": "python@3.12",
+      "build_command": "pip install -r requirements.txt",
+      "start_command": "python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+    }
+  },
+  {
+    "id": "python-flask",
+    "name": "Python (Flask/Gunicorn)",
+    "description": "Python 3.12 with Gunicorn",
+    "icon": "Play",
+    "config": {
+      "language_version": "python@3.12",
+      "build_command": "pip install -r requirements.txt",
+      "start_command": "gunicorn app:app -b 0.0.0.0:$PORT"
+    }
+  },
+  {
+    "id": "go",
+    "name": "Go (Golang)",
+    "description": "Go 1.21 binary build",
+    "icon": "Box",
+    "config": {
+      "language_version": "go@1.21",
+      "build_command": "go build -o app",
+      "start_command": "./app"
+    }
+  },
+  {
+    "id": "vue",
+    "name": "Vue.js (Vite)",
+    "description": "Vue SPA served via HTTP server",
+    "icon": "Layers",
+    "config": {
+      "language_version": "node@20",
+      "build_command": "npm install && npm run build",
+      "start_command": "npx serve -s dist -l $PORT"
+    }
+  },
+  {
+    "id": "next-start",
+    "name": "Next.js (SSR)",
+    "description": "Next.js Standalone or Default Start",
+    "icon": "Layers",
+    "config": {
+      "language_version": "node@20",
+      "build_command": "npm install && npm run build",
+      "start_command": "npm start"
+    }
+  }
+]

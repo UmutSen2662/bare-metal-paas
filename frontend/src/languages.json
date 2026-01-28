@@ -1,0 +1,32 @@
+[
+  {
+    "id": "node-20",
+    "value": "node@20",
+    "label": "Node.js 20"
+  },
+  {
+    "id": "node-18",
+    "value": "node@18",
+    "label": "Node.js 18"
+  },
+  {
+    "id": "node-lts",
+    "value": "node@lts",
+    "label": "Node.js LTS"
+  },
+  {
+    "id": "go-1-21",
+    "value": "go@1.21",
+    "label": "Go 1.21"
+  },
+  {
+    "id": "go-1-20",
+    "value": "go@1.20",
+    "label": "Go 1.20"
+  },
+  {
+    "id": "python-3-12",
+    "value": "python@3.12",
+    "label": "Python 3.12"
+  }
+]
