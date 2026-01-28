@@ -190,8 +190,18 @@ def update_caddy_config():
 
     # 1. Add Dashboard Route (if configured)
     dashboard_domain = os.getenv("DASHBOARD_DOMAIN")
+    admin_user = os.getenv("ADMIN_USER")
+    admin_pass_hash = os.getenv("ADMIN_PASSWORD_HASH")
+
     if dashboard_domain:
         caddyfile_lines.append(f"{dashboard_domain} {{")
+        
+        # Add Basic Auth if configured
+        if admin_user and admin_pass_hash:
+            caddyfile_lines.append("    basic_auth {")
+            caddyfile_lines.append(f"        {admin_user} {admin_pass_hash}")
+            caddyfile_lines.append("    }")
+
         caddyfile_lines.append("    reverse_proxy localhost:1323")
         caddyfile_lines.append("}")
 
