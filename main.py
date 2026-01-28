@@ -20,6 +20,14 @@ async def lifespan(app: FastAPI):
         print("WARNING: Not running as root. System operations (useradd, systemd) will fail.")
     if not os.path.exists("/usr/local/bin/mise"):
         print("WARNING: Mise not found at /usr/local/bin/mise. Deployments will fail.")
+    
+    # Sync Caddy Config on Startup
+    try:
+        system_ops.update_caddy_config()
+        print("Caddy configuration synced successfully.")
+    except Exception as e:
+        print(f"WARNING: Failed to sync Caddy on startup (is Caddy running?): {e}")
+        
     yield
 
 

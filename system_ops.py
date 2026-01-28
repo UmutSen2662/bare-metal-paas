@@ -180,29 +180,36 @@ def remove_systemd_service(name: str):
 
 def update_caddy_config():
     apps = get_apps()
-    routes = []
+    
+    # Start with global options
+    caddyfile_lines = [
+        "{",
+        "    debug",
+        "}"
+    ]
 
     # 1. Add Dashboard Route (if configured)
     dashboard_domain = os.getenv("DASHBOARD_DOMAIN")
     if dashboard_domain:
-        routes.append({
-            "match": [{"host": [dashboard_domain]}],
-            "handle": [{"handler": "reverse_proxy", "upstreams": [{"dial": "localhost:1323"}]}],
-        })
+        caddyfile_lines.append(f"{dashboard_domain} {{")
+        caddyfile_lines.append("    reverse_proxy localhost:1323")
+        caddyfile_lines.append("}")
 
     # 2. Add App Routes
     for app in apps:
         if app.domain and app.port:
-            route = {
-                "match": [{"host": [app.domain]}],
-                "handle": [{"handler": "reverse_proxy", "upstreams": [{"dial": f"localhost:{app.port}"}]}],
-            }
-            routes.append(route)
+            caddyfile_lines.append(f"{app.domain} {{")
+            caddyfile_lines.append(f"    reverse_proxy localhost:{app.port}")
+            caddyfile_lines.append("}")
 
-    config = {"apps": {"http": {"servers": {"srv0": {"listen": [":80"], "routes": routes}}}}}
+    caddyfile_content = "\n".join(caddyfile_lines)
 
     try:
-        resp = requests.post("http://localhost:2019/load", json=config)
+        resp = requests.post(
+            "http://localhost:2019/load", 
+            headers={"Content-Type": "text/caddyfile"},
+            data=caddyfile_content
+        )
         resp.raise_for_status()
     except Exception as e:
         raise Exception(f"Failed to update Caddy: {e}")
