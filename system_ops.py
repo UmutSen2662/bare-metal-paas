@@ -198,7 +198,10 @@ def update_caddy_config():
         
         # Add Basic Auth if configured
         if admin_user and admin_pass_hash:
-            caddyfile_lines.append("    basic_auth {")
+            caddyfile_lines.append("    @secure {")
+            caddyfile_lines.append("        not path /api/hooks/*")
+            caddyfile_lines.append("    }")
+            caddyfile_lines.append("    basic_auth @secure {")
             caddyfile_lines.append(f"        {admin_user} {admin_pass_hash}")
             caddyfile_lines.append("    }")
 
