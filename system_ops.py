@@ -190,10 +190,9 @@ def get_service_status(name: str) -> str:
     service_name = f"{name}.service"
     try:
         # systemctl is-active returns 0 if active, non-zero otherwise.
-        cmd = f"systemctl is-active {service_name}"
+        # We use a list and shell=False (default) to prevent shell injection.
         result = subprocess.run(
-            cmd,
-            shell=True,
+            ["systemctl", "is-active", service_name],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
@@ -253,3 +252,43 @@ def update_caddy_config():
         resp.raise_for_status()
     except Exception as e:
         raise Exception(f"Failed to update Caddy: {e}")
+
+
+def redeploy_app(app: AppModel) -> str:
+    """
+    Orchestrates a full redeploy: Pull -> Config -> Install -> Build -> Restart Service
+    """
+    logs = f"Starting redeploy for {app.name}...\n"
+    
+    # 1. Clone/Pull
+    logs += clone_or_pull(app)
+    
+    # 2. Mise Config
+    logs += configure_mise(app)
+    
+    # 3. Install Dependencies
+    logs += install_dependencies(app)
+    
+    # 4. Build
+    logs += build_app(app)
+    
+    # 5. Service (Systemd) - this restarts the service
+    logs += create_systemd_service(app)
+    
+    return logs
+
+
+def start_service(name: str):
+    """
+    Starts the systemd service for the app.
+    """
+    service_name = f"{name}.service"
+    run_command(f"systemctl start {service_name}")
+
+
+def stop_service(name: str):
+    """
+    Stops the systemd service for the app.
+    """
+    service_name = f"{name}.service"
+    run_command(f"systemctl stop {service_name}")

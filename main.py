@@ -246,54 +246,57 @@ def deploy(req: DeployRequest):
         return JSONResponse(status_code=500, content={"detail": str(e), "logs": logs})
 
 
+@app.post("/api/apps/{name}/redeploy")
+def redeploy_app_endpoint(name: str):
+    app_model = database.get_app_by_name(name)
+    if not app_model:
+        raise HTTPException(status_code=404, detail="App not found")
+
+    try:
+        logs = system_ops.redeploy_app(app_model)
+        return {"message": "Redeployed successfully", "logs": logs}
+    except Exception as e:
+        traceback.print_exc()
+        return JSONResponse(status_code=500, content={"detail": str(e)})
+
+
+@app.post("/api/apps/{name}/start")
+def start_app_endpoint(name: str):
+    if not database.get_app_by_name(name):
+        raise HTTPException(status_code=404, detail="App not found")
+    
+    try:
+        system_ops.start_service(name)
+        return {"message": "Service started"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/apps/{name}/stop")
+def stop_app_endpoint(name: str):
+    if not database.get_app_by_name(name):
+        raise HTTPException(status_code=404, detail="App not found")
+    
+    try:
+        system_ops.stop_service(name)
+        return {"message": "Service stopped"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/hooks/{token}")
 def webhook_deploy(token: str):
     app_model = database.get_app_by_token(token)
     if not app_model:
         raise HTTPException(status_code=404, detail="Invalid token")
 
-    logs = f"Webhook triggered for {app_model.name}\n"
     try:
-        # 3. Clone/Pull
-        try:
-            out = system_ops.clone_or_pull(app_model)
-            logs += out
-        except Exception as e:
-            raise Exception(str(e))
-
-        # 4. Mise Config
-        try:
-            out = system_ops.configure_mise(app_model)
-            logs += out
-        except Exception as e:
-            raise Exception(str(e))
-
-        # 4.5 Install Dependencies
-        try:
-            out = system_ops.install_dependencies(app_model)
-            logs += out
-        except Exception as e:
-            raise Exception(str(e))
-
-        # 5. Build
-        try:
-            out = system_ops.build_app(app_model)
-            logs += out
-        except Exception as e:
-            raise Exception(str(e))
-
-        # 6. Service (Systemd)
-        try:
-            out = system_ops.create_systemd_service(app_model)
-            logs += out
-        except Exception as e:
-            raise Exception(str(e))
-
+        logs = system_ops.redeploy_app(app_model)
         return {"message": "Redeployed successfully", "app": app_model.name, "logs": logs}
 
     except Exception as e:
         traceback.print_exc()
-        return JSONResponse(status_code=500, content={"detail": str(e), "logs": logs})
+        return JSONResponse(status_code=500, content={"detail": str(e)})
 
 
 # --- Frontend Serving (Must be last) ---

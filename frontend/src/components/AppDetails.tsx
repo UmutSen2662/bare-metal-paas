@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Trash2, ExternalLink, Terminal, Edit, Clipboard, Check, Webhook } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Trash2, ExternalLink, Terminal, Edit, Clipboard, Check, Webhook, RefreshCw, Power, Play, Loader2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { App } from "../types";
 import { Button } from "./ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/Card";
@@ -14,6 +14,8 @@ interface AppDetailsProps {
 export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProps) {
     const logsContainerRef = useRef<HTMLDivElement>(null);
     const [copied, setCopied] = useState(false);
+    const queryClient = useQueryClient();
+    const [isLoading, setIsLoading] = useState<string | null>(null);
 
     // 1. Live App Status
     const { data: app } = useQuery<App>({
@@ -56,6 +58,26 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const handleAction = async (action: "redeploy" | "start" | "stop") => {
+        if (isLoading) return;
+
+        setIsLoading(action);
+        try {
+            const res = await fetch(`/api/apps/${app.name}/${action}`, { method: "POST" });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.detail || "Action failed");
+            }
+            await queryClient.invalidateQueries({ queryKey: ["app", app.name] });
+            await queryClient.invalidateQueries({ queryKey: ["app-logs", app.name] });
+        } catch (err) {
+            console.error(err);
+            alert(`Failed to ${action} app: ${err}`);
+        } finally {
+            setIsLoading(null);
+        }
+    };
+
     return (
         <div className="max-w-7xl mx-auto p-8">
             <div className="flex justify-between items-start mb-10 border-b border-iron-800 pb-6">
@@ -88,6 +110,55 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
 
                 <div className="flex gap-3">
                     <Button
+                        onClick={() => handleAction("redeploy")}
+                        variant="secondary"
+                        size="md"
+                        disabled={!!isLoading}
+                        className="flex items-center gap-2 uppercase text-xs tracking-wider"
+                    >
+                        {isLoading === "redeploy" ? (
+                            <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                            <RefreshCw size={16} />
+                        )}
+                        Redeploy
+                    </Button>
+
+                    {app.status === "running" ? (
+                        <Button
+                            onClick={() => handleAction("stop")}
+                            variant="secondary"
+                            size="md"
+                            disabled={!!isLoading}
+                            className="flex items-center gap-2 uppercase text-xs tracking-wider hover:bg-red-900/20 hover:border-red-500/50 hover:text-red-400"
+                        >
+                            {isLoading === "stop" ? (
+                                <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                                <Power size={16} />
+                            )}
+                            Stop
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={() => handleAction("start")}
+                            variant="secondary"
+                            size="md"
+                            disabled={!!isLoading}
+                            className="flex items-center gap-2 uppercase text-xs tracking-wider hover:bg-green-900/20 hover:border-green-500/50 hover:text-green-400"
+                        >
+                            {isLoading === "start" ? (
+                                <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                                <Play size={16} />
+                            )}
+                            Start
+                        </Button>
+                    )}
+
+                    <div className="w-px h-8 bg-iron-800 mx-2"></div>
+
+                    <Button
                         onClick={() => onEdit(app)}
                         variant="secondary"
                         size="md"
@@ -117,12 +188,18 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 pt-4 flex flex-wrap gap-5 justify-between">
-                            <div>
+                            <div className="min-w-0 flex-1">
                                 <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">
                                     Repository
                                 </div>
-                                <div className="text-sm text-slate-300 hover:text-forge-500 font-mono bg-iron-950 p-2.5 rounded border border-iron-800 truncate">
-                                    <a href={app.repo_url} target="_blank" rel="noreferrer">
+                                <div className="text-sm text-slate-300 hover:text-forge-500 font-mono bg-iron-950 p-2.5 rounded border border-iron-800">
+                                    <a
+                                        className="block truncate"
+                                        href={app.repo_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        title={app.repo_url}
+                                    >
                                         {app.repo_url}
                                     </a>
                                 </div>
@@ -211,8 +288,8 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                 </div>
 
                 {/* Logs Column */}
-                <div className="lg:col-span-2 flex flex-col h-[70vh]">
-                    <Card className="flex-1 flex flex-col overflow-hidden bg-iron-950 border-iron-800">
+                <div className="lg:col-span-2 flex flex-col h-[70vh] lg:h-auto lg:block lg:relative">
+                    <Card className="flex-1 lg:absolute lg:inset-0 flex flex-col overflow-hidden bg-iron-950 border-iron-800">
                         <CardHeader className="bg-iron-900 border-b border-iron-800 p-4 flex flex-row justify-between items-center">
                             <CardTitle className="text-sm font-mono flex items-center gap-2 uppercase tracking-widest text-slate-400">
                                 <Terminal size={16} className="text-forge-500" /> Live Runtime Logs

@@ -1,8 +1,10 @@
-import { Box, ExternalLink, RefreshCw, Power, Play, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { Box, ExternalLink, RefreshCw, Power, Play, ArrowRight, Loader2 } from "lucide-react";
 import type { App } from "../types";
 import { Card, CardHeader, CardContent, CardFooter } from "./ui/Card";
 import { Button } from "./ui/Button";
 import { cn } from "../lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AppCardProps {
     app: App;
@@ -12,10 +14,28 @@ interface AppCardProps {
 export function AppCard({ app, onClick }: AppCardProps) {
     const appUrl = `http://${app.domain}`;
     const isRunning = app.status === "running";
+    const queryClient = useQueryClient();
+    const [isLoading, setIsLoading] = useState<string | null>(null);
 
-    const handlePlaceholder = (e: React.MouseEvent, action: string) => {
+    const handleAction = async (e: React.MouseEvent, action: "redeploy" | "start" | "stop") => {
         e.stopPropagation();
-        alert(`${action} feature coming soon!`);
+        if (isLoading) return;
+
+        setIsLoading(action);
+        try {
+            const res = await fetch(`/api/apps/${app.name}/${action}`, { method: "POST" });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.detail || "Action failed");
+            }
+            await queryClient.invalidateQueries({ queryKey: ["apps"] });
+            // For redeploy, we might want to invalidate logs too if we were viewing them, but that's in details page.
+        } catch (err) {
+            console.error(err);
+            alert(`Failed to ${action} app: ${err}`);
+        } finally {
+            setIsLoading(null);
+        }
     };
 
     return (
@@ -67,32 +87,48 @@ export function AppCard({ app, onClick }: AppCardProps) {
                     />
                 </div>
 
-                {/* Action Buttons (Placeholders) */}
+                {/* Action Buttons */}
                 <div className="grid grid-cols-2 gap-3">
                     <Button
-                        onClick={(e) => handlePlaceholder(e, "Redeploy")}
+                        onClick={(e) => handleAction(e, "redeploy")}
                         variant="secondary"
+                        disabled={!!isLoading}
                         className="gap-2 h-auto py-2.5 group/btn"
                     >
-                        <RefreshCw size={14} className="group-hover/btn:rotate-180 transition-transform duration-500" />
+                        {isLoading === "redeploy" ? (
+                            <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                            <RefreshCw size={14} className="group-hover/btn:rotate-180 transition-transform duration-500" />
+                        )}
                         <span className="text-xs uppercase font-bold tracking-wider">Redeploy</span>
                     </Button>
+                    
                     {isRunning ? (
                         <Button
-                            onClick={(e) => handlePlaceholder(e, "Stop")}
+                            onClick={(e) => handleAction(e, "stop")}
                             variant="secondary"
+                            disabled={!!isLoading}
                             className="gap-2 h-auto py-2.5 hover:bg-red-900/20 hover:border-red-500/50 hover:text-red-400"
                         >
-                            <Power size={14} />
+                            {isLoading === "stop" ? (
+                                <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                                <Power size={14} />
+                            )}
                             <span className="text-xs uppercase font-bold tracking-wider">Stop</span>
                         </Button>
                     ) : (
                         <Button
-                            onClick={(e) => handlePlaceholder(e, "Start")}
+                            onClick={(e) => handleAction(e, "start")}
                             variant="secondary"
+                            disabled={!!isLoading}
                             className="gap-2 h-auto py-2.5 hover:bg-green-900/20 hover:border-green-500/50 hover:text-green-400"
                         >
-                            <Play size={14} />
+                            {isLoading === "start" ? (
+                                <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                                <Play size={14} />
+                            )}
                             <span className="text-xs uppercase font-bold tracking-wider">Start</span>
                         </Button>
                     )}

@@ -41,7 +41,7 @@ def init_db():
             build_command TEXT,
             start_command TEXT,
             language_version TEXT,
-            deploy_token TEXT
+            deploy_token TEXT UNIQUE
         );
     """
     )
@@ -51,7 +51,7 @@ def init_db():
     columns = [info[1] for info in cursor.fetchall()]
     if "deploy_token" not in columns:
         print("Migrating DB: Adding deploy_token column...")
-        cursor.execute("ALTER TABLE apps ADD COLUMN deploy_token TEXT")
+        cursor.execute("ALTER TABLE apps ADD COLUMN deploy_token TEXT UNIQUE")
         
         # Generate tokens for existing apps
         cursor.execute("SELECT id FROM apps")
