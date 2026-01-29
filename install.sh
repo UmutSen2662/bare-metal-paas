@@ -28,6 +28,13 @@ if [ -z "$APPS_DOMAIN" ]; then
     APPS_DOMAIN="paas.local"
 fi
 
+read -s -p "3. Enter Admin Password for Dashboard: " ADMIN_PASSWORD
+echo ""
+if [ -z "$ADMIN_PASSWORD" ]; then
+    echo -e "${RED}Password is required.${NC}"
+    exit 1
+fi
+
 echo -e "${GREEN}Dashboard: http://${DASHBOARD_DOMAIN}${NC}"
 echo -e "${GREEN}Apps Suffix: *.${APPS_DOMAIN}${NC}"
 echo ""
@@ -48,26 +55,33 @@ if ! command -v caddy &> /dev/null; then
     systemctl start caddy
 fi
 
+# Generate Password Hash
+echo -e "${BLUE}Securing Dashboard...${NC}"
+ADMIN_PASSWORD_HASH=$(caddy hash-password --plaintext "$ADMIN_PASSWORD")
+
 # 5. Install Mise (if not present)
-if [ ! -f "/usr/local/bin/mise" ]; then
+if ! command -v mise &> /dev/null && [ ! -f "/usr/local/bin/mise" ]; then
     echo -e "${BLUE}Installing Mise...${NC}"
     curl https://mise.jdx.dev/install.sh | sh
     mv ~/.local/bin/mise /usr/local/bin/mise
 fi
+
+MISE_BIN=$(command -v mise || echo "/usr/local/bin/mise")
+echo -e "${BLUE}Using Mise at: ${MISE_BIN}${NC}"
 
 # 6. Python Setup
 echo -e "${BLUE}Setting up Backend...${NC}"
 if [ ! -d "venv" ]; then
     python3 -m venv venv
 fi
-./venv/bin/pip install fastapi uvicorn requests psutil
+./venv/bin/pip install -r requirements.txt
 
 # 7. Frontend Build
 echo -e "${BLUE}Building Frontend...${NC}"
 # Use mise to install Node.js temporarily to build assets
-/usr/local/bin/mise use --global node@20
-/usr/local/bin/mise exec node@20 -- npm install --prefix frontend
-/usr/local/bin/mise exec node@20 -- npm run build --prefix frontend
+${MISE_BIN} use --global node@20
+${MISE_BIN} exec node@20 -- npm install --prefix frontend
+${MISE_BIN} exec node@20 -- npm run build --prefix frontend
 
 # 8. Create Systemd Service for PaaS
 echo -e "${BLUE}Creating Systemd Service...${NC}"
@@ -81,6 +95,8 @@ User=root
 WorkingDirectory=$(pwd)
 Environment="BASE_DOMAIN=${APPS_DOMAIN}"
 Environment="DASHBOARD_DOMAIN=${DASHBOARD_DOMAIN}"
+Environment="ADMIN_USER=admin"
+Environment="ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}"
 ExecStart=$(pwd)/venv/bin/python main.py
 Restart=always
 
@@ -90,7 +106,6 @@ EOF
 
 systemctl daemon-reload
 systemctl enable bare-metal-paas
-systemctl restart bare-metal-paas
 
 # 9. Configure Caddy for Dashboard
 # We use the Caddy API to add the dashboard route, just like system_ops.py does for apps
@@ -115,6 +130,9 @@ ${DASHBOARD_DOMAIN} {
 EOF
 
 systemctl reload caddy
+
+# Restart the service to ensure it syncs the secure config via API *after* Caddy has reloaded the static file.
+systemctl restart bare-metal-paas
 
 echo -e "${GREEN}=== Installation Complete! ===${NC}"
 echo -e "Dashboard available at: http://${DASHBOARD_DOMAIN}"

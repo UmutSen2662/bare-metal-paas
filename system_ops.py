@@ -4,9 +4,10 @@ import subprocess
 import socket
 import requests
 import shlex
+import shutil
 from database import AppModel, get_apps
 
-MISE_PATH = "/usr/local/bin/mise"
+MISE_PATH = shutil.which("mise") or "/usr/local/bin/mise"
 
 
 def run_command(command: str, cwd=None, env=None) -> str:
@@ -136,7 +137,7 @@ User={name}
 Group={name}
 WorkingDirectory=/home/{name}/www
 Environment=PORT={port}
-ExecStart=/usr/local/bin/mise exec {language_version} -- {start_command}
+ExecStart={mise_path} exec {language_version} -- {start_command}
 Restart=always
 
 [Install]
@@ -147,7 +148,11 @@ WantedBy=multi-user.target
 def create_systemd_service(app: AppModel) -> str:
     service_path = f"/etc/systemd/system/{app.name}.service"
     content = SERVICE_TEMPLATE.format(
-        name=app.name, language_version=app.language_version, start_command=app.start_command, port=app.port
+        name=app.name, 
+        language_version=app.language_version, 
+        start_command=app.start_command, 
+        port=app.port,
+        mise_path=MISE_PATH
     )
 
     with open(service_path, "w") as f:

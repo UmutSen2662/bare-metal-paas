@@ -84,6 +84,14 @@ def get_system_stats():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/apps/{name}")
+def get_app(name: str):
+    app = database.get_app_by_name(name)
+    if not app:
+        raise HTTPException(status_code=404, detail="App not found")
+    return app
+
+
 @app.get("/api/apps/{name}/logs")
 def get_app_logs(name: str):
     # Security check: ensure app exists to prevent arbitrary service queries
