@@ -59,11 +59,11 @@ export function AppCard({ app, onClick }: AppCardProps) {
                     <span className="relative flex h-2.5 w-2.5">
                         {isRunning ? (
                             <>
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-status-success shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green shadow-[var(--shadow-success)]"></span>
                             </>
                         ) : (
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-status-error shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red shadow-[var(--shadow-error)]"></span>
                         )}
                     </span>
                 </div>
@@ -93,22 +93,25 @@ export function AppCard({ app, onClick }: AppCardProps) {
                         onClick={(e) => handleAction(e, "redeploy")}
                         variant="secondary"
                         disabled={!!isLoading}
-                        className="gap-2 h-auto py-2.5 group/btn"
+                        className="gap-2 h-auto py-2.5 group/btn hover:text-forge-500 hover:border-forge-500/50"
                     >
                         {isLoading === "redeploy" ? (
                             <Loader2 size={14} className="animate-spin" />
                         ) : (
-                            <RefreshCw size={14} className="group-hover/btn:rotate-180 transition-transform duration-500" />
+                            <RefreshCw
+                                size={14}
+                                className="group-hover/btn:rotate-180 transition-transform duration-500"
+                            />
                         )}
                         <span className="text-xs uppercase font-bold tracking-wider">Redeploy</span>
                     </Button>
-                    
+
                     {isRunning ? (
                         <Button
                             onClick={(e) => handleAction(e, "stop")}
                             variant="secondary"
                             disabled={!!isLoading}
-                            className="gap-2 h-auto py-2.5 hover:bg-red-900/20 hover:border-red-500/50 hover:text-red-400"
+                            className="gap-2 h-auto py-2.5 hover:border-red/50 hover:text-red"
                         >
                             {isLoading === "stop" ? (
                                 <Loader2 size={14} className="animate-spin" />
@@ -122,7 +125,7 @@ export function AppCard({ app, onClick }: AppCardProps) {
                             onClick={(e) => handleAction(e, "start")}
                             variant="secondary"
                             disabled={!!isLoading}
-                            className="gap-2 h-auto py-2.5 hover:bg-green-900/20 hover:border-green-500/50 hover:text-green-400"
+                            className="gap-2 h-auto py-2.5 hover:border-green/50 hover:text-green"
                         >
                             {isLoading === "start" ? (
                                 <Loader2 size={14} className="animate-spin" />
@@ -145,7 +148,7 @@ export function AppCard({ app, onClick }: AppCardProps) {
                     className="absolute inset-0 opacity-0 group-hover/footer:opacity-100 transition-opacity duration-300"
                     style={{
                         backgroundImage:
-                            "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(249, 115, 22, 0.1) 10px, rgba(249, 115, 22, 0.1) 20px)",
+                            "repeating-linear-gradient(45deg, transparent, transparent 10px, var(--color-hazard-stripe) 10px, var(--color-hazard-stripe) 20px)",
                     }}
                 ></div>
 

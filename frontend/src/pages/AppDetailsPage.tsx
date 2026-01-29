@@ -15,7 +15,12 @@ export default function AppDetailsPage() {
     const { openEditAppModal } = useOutletContext<DetailsContext>();
 
     // Initial Fetch (sets up the cache for AppDetails to reuse)
-    const { data: app, isLoading, isError, error } = useQuery<App>({
+    const {
+        data: app,
+        isLoading,
+        isError,
+        error,
+    } = useQuery<App>({
         queryKey: ["app", name],
         queryFn: async () => {
             if (!name) throw new Error("No app name provided");
@@ -51,10 +56,10 @@ export default function AppDetailsPage() {
 
     if (isLoading)
         return <div className="p-8 text-center text-slate-500 font-mono animate-pulse">Scanning frequencies...</div>;
-    
+
     if (isError || !app)
         return (
-            <div className="p-8 text-center text-status-error font-mono border border-status-error/20 bg-status-error/10 rounded m-8">
+            <div className="p-8 text-center text-red font-mono border border-red/20 bg-red/10 rounded m-8">
                 {error?.message || "Target not found"}
             </div>
         );

@@ -21,9 +21,9 @@ export const CircularGauge: React.FC<CircularGaugeProps> = ({
     const circumference = radius * 2 * Math.PI;
     const offset = circumference - (value / 100) * circumference;
 
-    // Determine color based on value if default provided
+    // Determine color based on value
     const getStrokeColor = () => {
-        if (value > 80) return "stroke-status-error drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]";
+        if (value > 80) return "stroke-red drop-shadow-[var(--shadow-error)]";
         return `stroke-forge-500`;
     };
 

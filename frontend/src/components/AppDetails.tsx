@@ -1,5 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Trash2, ExternalLink, Terminal, Edit, Clipboard, Check, Webhook, RefreshCw, Power, Play, Loader2 } from "lucide-react";
+import {
+    Trash2,
+    ExternalLink,
+    Terminal,
+    Edit,
+    Clipboard,
+    Check,
+    Webhook,
+    RefreshCw,
+    Power,
+    Play,
+    Loader2,
+} from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { App } from "../types";
 import { Button } from "./ui/Button";
@@ -83,17 +95,17 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
             <div className="flex justify-between items-start mb-10 border-b border-iron-800 pb-6">
                 <div className="flex gap-6 items-center">
                     <h1 className="text-4xl font-display font-bold text-white uppercase tracking-wide">{app.name}</h1>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-iron-900 border border-iron-800 rounded-full">
+                    <div className="flex items-center gap-2 p-2.5 bg-iron-900 border border-iron-800 rounded-full">
                         <span className={`relative flex h-2 w-2`}>
                             {app.status === "running" && (
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75"></span>
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75"></span>
                             )}
                             <span
-                                className={`relative inline-flex rounded-full h-2 w-2 ${app.status === "running" ? "bg-status-success shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-status-error shadow-[0_0_8px_rgba(239,68,68,0.6)]"}`}
+                                className={`relative inline-flex rounded-full h-2 w-2 ${app.status === "running" ? "bg-green shadow-[var(--shadow-success)]" : "bg-red shadow-[var(--shadow-error)]"}`}
                             ></span>
                         </span>
                         <span
-                            className={`text-[10px] font-mono font-bold uppercase tracking-widest ${app.status === "running" ? "text-status-success" : "text-status-error"}`}
+                            className={`text-[10px] font-mono font-bold uppercase tracking-widest ${app.status === "running" ? "text-green" : "text-red"}`}
                         >
                             {app.status}
                         </span>
@@ -102,7 +114,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                         href={`http://${app.domain}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="w-fit inline-flex items-center gap-2 text-forge-500 font-mono text-sm border border-iron-800 bg-iron-900 px-3 py-1 rounded hover:border-forge-500 transition-colors"
+                        className="w-fit inline-flex items-center gap-2 text-forge-500 font-mono text-sm border border-iron-800 bg-iron-900 p-2.5 rounded hover:border-forge-500/50 transition-colors"
                     >
                         {app.domain} <ExternalLink size={14} />
                     </a>
@@ -114,7 +126,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                         variant="secondary"
                         size="md"
                         disabled={!!isLoading}
-                        className="flex items-center gap-2 uppercase text-xs tracking-wider"
+                        className="flex items-center gap-2 uppercase text-xs tracking-wider hover:text-forge-500 hover:border-forge-500/50"
                     >
                         {isLoading === "redeploy" ? (
                             <Loader2 size={16} className="animate-spin" />
@@ -130,7 +142,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                             variant="secondary"
                             size="md"
                             disabled={!!isLoading}
-                            className="flex items-center gap-2 uppercase text-xs tracking-wider hover:bg-red-900/20 hover:border-red-500/50 hover:text-red-400"
+                            className="flex items-center gap-2 uppercase text-xs tracking-wider hover:border-red/50 hover:text-red"
                         >
                             {isLoading === "stop" ? (
                                 <Loader2 size={16} className="animate-spin" />
@@ -145,7 +157,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                             variant="secondary"
                             size="md"
                             disabled={!!isLoading}
-                            className="flex items-center gap-2 uppercase text-xs tracking-wider hover:bg-green-900/20 hover:border-green-500/50 hover:text-green-400"
+                            className="flex items-center gap-2 uppercase text-xs tracking-wider hover:border-green/50 hover:text-green"
                         >
                             {isLoading === "start" ? (
                                 <Loader2 size={16} className="animate-spin" />
@@ -162,7 +174,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                         onClick={() => onEdit(app)}
                         variant="secondary"
                         size="md"
-                        className="flex items-center gap-2 uppercase text-xs tracking-wider"
+                        className="flex items-center gap-2 uppercase text-xs tracking-wider hover:border-forge-500/50 hover:text-forge-500"
                     >
                         <Edit size={16} /> Edit
                     </Button>
@@ -170,7 +182,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                         onClick={() => onDelete(app.name)}
                         variant="secondary"
                         size="md"
-                        className="flex items-center gap-2 uppercase text-xs tracking-wider hover:bg-red-900/20 hover:border-red-500/50 hover:text-red-400"
+                        className="flex items-center gap-2 uppercase text-xs tracking-wider hover:border-red/50 hover:text-red"
                     >
                         <Trash2 size={16} /> Delete
                     </Button>
@@ -192,15 +204,16 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                                 <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">
                                     Repository
                                 </div>
-                                <div className="text-sm text-slate-300 hover:text-forge-500 font-mono bg-iron-950 p-2.5 rounded border border-iron-800">
+                                <div className="text-sm text-forge-500 font-mono bg-iron-950 p-2.5 rounded border border-iron-800 hover:border-forge-500/50 transition-colors">
                                     <a
-                                        className="block truncate"
+                                        className="flex items-center gap-2 w-full"
                                         href={app.repo_url}
                                         target="_blank"
                                         rel="noreferrer"
                                         title={app.repo_url}
                                     >
-                                        {app.repo_url}
+                                        {app.repo_url.substring(app.repo_url.lastIndexOf("/") + 1).replace(".git", "")}{" "}
+                                        <ExternalLink size={14} />
                                     </a>
                                 </div>
                             </div>
@@ -245,11 +258,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                                     className="h-9 w-9 bg-iron-950"
                                     title="Copy to clipboard"
                                 >
-                                    {copied ? (
-                                        <Check size={16} className="text-status-success" />
-                                    ) : (
-                                        <Clipboard size={16} />
-                                    )}
+                                    {copied ? <Check size={16} className="text-green" /> : <Clipboard size={16} />}
                                 </Button>
                             </div>
                             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
@@ -279,7 +288,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                                 <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">
                                     Start
                                 </div>
-                                <code className="text-xs text-status-success bg-iron-950 block p-2.5 rounded border border-iron-800 font-mono break-all">
+                                <code className="text-xs text-green bg-iron-950 block p-2.5 rounded border border-iron-800 font-mono break-all">
                                     {app.start_command}
                                 </code>
                             </div>
@@ -296,8 +305,8 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                             </CardTitle>
                             <div className="flex items-center gap-2">
                                 <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-status-success shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green shadow-[var(--shadow-success-strong)]"></span>
                                 </span>
                                 <span className="text-xs text-slate-500 font-mono">LIVE FEED</span>
                             </div>

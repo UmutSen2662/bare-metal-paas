@@ -31,7 +31,7 @@ interface StatCardProps {
 
 const StatCard = ({ label, subLabel, percentage }: StatCardProps) => {
     // Determine color based on value
-    const strokeColor = percentage > 80 ? "#ef4444" : "#f97316"; // status-error or forge-500
+    const strokeColor = percentage > 80 ? "var(--color-red)" : "var(--color-forge-500)"; // red or forge-500
 
     return (
         <Card className="flex items-center justify-between p-5 relative overflow-hidden group">
@@ -47,7 +47,7 @@ const StatCard = ({ label, subLabel, percentage }: StatCardProps) => {
                 {/* SVG Ring */}
                 <svg className="w-full h-full transform -rotate-90">
                     {/* Track */}
-                    <circle cx="40" cy="40" r="36" stroke="#1e293b" strokeWidth="6" fill="transparent" />
+                    <circle cx="40" cy="40" r="36" stroke="var(--color-iron-800)" strokeWidth="6" fill="transparent" />
                     {/* Progress */}
                     <circle
                         cx="40"

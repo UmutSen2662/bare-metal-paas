@@ -10,7 +10,7 @@ export function Navbar({ onOpenNew }: NavbarProps) {
     return (
         <nav className="bg-iron-950/80 border-b border-iron-800 px-6 flex items-center justify-between sticky top-0 z-50 backdrop-blur-md">
             <Link to="/" className="flex items-center gap-3 group">
-                <div className="p-1.5 bg-iron-900 border border-iron-700 rounded-md group-hover:border-forge-500 group-hover:shadow-[0_0_10px_rgba(249,115,22,0.2)] transition-all duration-300">
+                <div className="p-1.5 bg-iron-900 border border-iron-700 rounded-md group-hover:border-forge-500 group-hover:shadow-[var(--shadow-forge-sm)] transition-all duration-300">
                     <LayoutDashboard className="text-forge-500" size={20} />
                 </div>
                 <h1 className="text-xl font-display font-bold text-white tracking-widest uppercase">

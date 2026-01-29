@@ -108,7 +108,7 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         let finalDomain = formData.domain;
 
         if (!useCustomDomain) {
@@ -140,8 +140,8 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
 
                 <div className="p-8">
                     {deployMutation.isError && (
-                        <div className="mb-6 p-4 bg-red-900/20 text-status-error rounded-lg text-sm border border-red-900/50 flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-status-error animate-pulse"></div>
+                        <div className="mb-6 p-4 bg-red/20 text-red rounded-lg text-sm border border-red/50 flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red animate-pulse"></div>
                             {deployMutation.error.message}
                         </div>
                     )}
@@ -363,7 +363,13 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                             </div>
                         </div>
 
-                        <Button type="submit" disabled={deployMutation.isPending} variant="primary" size="lg" className="w-full">
+                        <Button
+                            type="submit"
+                            disabled={deployMutation.isPending}
+                            variant="primary"
+                            size="lg"
+                            className="w-full"
+                        >
                             {deployMutation.isPending ? (
                                 <>
                                     <span className="animate-spin h-5 w-5 border-2 border-b-transparent border-white rounded-full mr-2"></span>
