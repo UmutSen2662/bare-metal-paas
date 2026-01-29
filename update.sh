@@ -33,14 +33,15 @@ echo -e "${BLUE}Syncing Caddyfile...${NC}"
 # Read directly from the service file for reliability
 SERVICE_FILE="/etc/systemd/system/bare-metal-paas.service"
 if [ -f "$SERVICE_FILE" ]; then
-    # Extract values using sed to handle the Environment="KEY=VALUE" format correctly
-    DOMAIN=$(grep 'Environment="DASHBOARD_DOMAIN=' "$SERVICE_FILE" | head -n 1 | sed 's/^.*Environment="DASHBOARD_DOMAIN=\([^"]*\)".*$/\1/')
-    HASH=$(grep 'Environment="ADMIN_PASSWORD_HASH=' "$SERVICE_FILE" | head -n 1 | sed 's/^.*Environment="ADMIN_PASSWORD_HASH=\([^"]*\)".*$/\1/')
+    # Extract values using sed with | as delimiter to handle slashes in hashes
+    DOMAIN=$(grep 'Environment="DASHBOARD_DOMAIN=' "$SERVICE_FILE" | head -n 1 | sed 's|^.*Environment="DASHBOARD_DOMAIN=\([^"]*\)".*$|\1|')
+    USER=$(grep 'Environment="ADMIN_USER=' "$SERVICE_FILE" | head -n 1 | sed 's|^.*Environment="ADMIN_USER=\([^"]*\)".*$|\1|')
+    HASH=$(grep 'Environment="ADMIN_PASSWORD_HASH=' "$SERVICE_FILE" | head -n 1 | sed 's|^.*Environment="ADMIN_PASSWORD_HASH=\([^"]*\)".*$|\1|')
 else
     echo -e "${RED}Service file not found at $SERVICE_FILE${NC}"
 fi
 
-if [ -n "$HASH" ] && [ -n "$DOMAIN" ]; then
+if [ -n "$HASH" ] && [ -n "$DOMAIN" ] && [ -n "$USER" ]; then
 cat <<EOF > /etc/caddy/Caddyfile
 {
     debug
@@ -51,15 +52,15 @@ $DOMAIN {
         not path /api/hooks/*
     }
     basic_auth @secure {
-        admin $HASH
+        $USER $HASH
     }
     reverse_proxy localhost:1323
 }
 EOF
     systemctl reload caddy
-    echo -e "${GREEN}Caddyfile updated and reloaded.${NC}"
+    echo -e "${GREEN}Caddyfile updated and reloaded for user: $USER${NC}"
 else
-    echo -e "${RED}Warning: Could not extract config (Hash or Domain is empty). Caddyfile not updated.${NC}"
+    echo -e "${RED}Warning: Could not extract config (Hash, Domain, or User is empty). Caddyfile not updated.${NC}"
 fi
 
 echo -e "${GREEN}=== Update Complete! ===${NC}"
