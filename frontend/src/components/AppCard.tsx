@@ -1,7 +1,8 @@
-import { Box, ExternalLink, Globe, Terminal, Activity } from "lucide-react";
+import { Box, ExternalLink, RefreshCw, Power, Play, ArrowRight } from "lucide-react";
 import type { App } from "../types";
 import { Card, CardHeader, CardContent, CardFooter } from "./ui/Card";
 import { Button } from "./ui/Button";
+import { cn } from "../lib/utils";
 
 interface AppCardProps {
     app: App;
@@ -9,77 +10,116 @@ interface AppCardProps {
 }
 
 export function AppCard({ app, onClick }: AppCardProps) {
+    const appUrl = `http://${app.domain}`;
+    const isRunning = app.status === "running";
+
+    const handlePlaceholder = (e: React.MouseEvent, action: string) => {
+        e.stopPropagation();
+        alert(`${action} feature coming soon!`);
+    };
+
     return (
         <Card
-            onClick={() => onClick(app)}
-            className="group relative overflow-hidden transition-all duration-300 hover:border-forge-500 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] cursor-pointer flex flex-col"
+            className={cn(
+                "group relative overflow-hidden transition-all duration-300",
+                "border-iron-800 bg-iron-900",
+                "flex flex-col p-0 gap-0",
+            )}
         >
-            {/* Darker Header */}
-            <CardHeader className="bg-iron-950/50 flex flex-row justify-between items-center transition-colors">
+            {/* Header */}
+            <CardHeader className="flex-row items-center justify-between p-4 my-0 bg-iron-950/30 border-iron-800/50 pointer-events-none">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-iron-950 rounded border border-iron-800 text-forge-500 transition-colors">
-                        <Box size={20} />
+                    <div className="p-2 rounded bg-forge-900/20 border border-forge-900/50 text-forge-500 transition-colors">
+                        <Box size={18} />
                     </div>
-                    <div>
-                        <h3 className="font-display font-bold text-white text-lg tracking-wide uppercase transition-colors">
-                            {app.name}
-                        </h3>
-                    </div>
+                    <h3 className="font-display text-lg font-bold text-white tracking-wide uppercase">{app.name}</h3>
                 </div>
-                {/* Traffic Light Status */}
+                {/* Traffic Light */}
                 <div className="flex items-center gap-2">
-                    <span className="relative flex h-3 w-3">
-                        {app.status === "running" ? (
+                    <span className="relative flex h-2.5 w-2.5">
+                        {isRunning ? (
                             <>
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-status-success shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-status-success shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
                             </>
                         ) : (
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-status-error shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-status-error shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
                         )}
                     </span>
                 </div>
             </CardHeader>
 
             {/* Body */}
-            <CardContent className="flex-1 flex flex-col gap-4 mt-4">
-                <div className="space-y-3">
-                    <div className="flex items-center gap-3 text-sm text-slate-400 font-mono bg-iron-950/30 p-2.5 rounded border border-iron-800/50">
-                        <Globe size={14} className="text-forge-500" />
-                        <span className="truncate flex-1 hover:text-white transition-colors">{app.domain}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-slate-400 font-mono bg-iron-950/30 p-2.5 rounded border border-iron-800/50">
-                        <Terminal size={14} className="text-forge-500" />
-                        <span className="truncate flex-1 text-xs">{app.language_version}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-slate-400 font-mono bg-iron-950/30 p-2.5 rounded border border-iron-800/50">
-                        <Activity size={14} className="text-forge-500" />
-                        <span className="truncate flex-1 text-xs">
-                            PORT: <span className="text-white">{app.port}</span>
-                        </span>
-                    </div>
+            <CardContent className="p-5 pt-5 flex-1 flex flex-col gap-5">
+                {/* Endpoint Pill */}
+                <div className="flex items-center justify-between bg-iron-950/50 p-3 rounded border border-iron-800 group/link hover:border-forge-500/30 transition-colors">
+                    <a
+                        href={appUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-mono text-sm text-slate-300 group-hover/link:text-forge-500 truncate transition-colors flex-1 mr-2"
+                    >
+                        {app.domain}
+                    </a>
+                    <ExternalLink
+                        size={12}
+                        className="text-slate-500 group-hover/link:text-forge-500 transition-colors shrink-0"
+                    />
+                </div>
+
+                {/* Action Buttons (Placeholders) */}
+                <div className="grid grid-cols-2 gap-3">
+                    <Button
+                        onClick={(e) => handlePlaceholder(e, "Redeploy")}
+                        variant="secondary"
+                        className="gap-2 h-auto py-2.5 group/btn"
+                    >
+                        <RefreshCw size={14} className="group-hover/btn:rotate-180 transition-transform duration-500" />
+                        <span className="text-xs uppercase font-bold tracking-wider">Redeploy</span>
+                    </Button>
+                    {isRunning ? (
+                        <Button
+                            onClick={(e) => handlePlaceholder(e, "Stop")}
+                            variant="secondary"
+                            className="gap-2 h-auto py-2.5 hover:bg-red-900/20 hover:border-red-500/50 hover:text-red-400"
+                        >
+                            <Power size={14} />
+                            <span className="text-xs uppercase font-bold tracking-wider">Stop</span>
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={(e) => handlePlaceholder(e, "Start")}
+                            variant="secondary"
+                            className="gap-2 h-auto py-2.5 hover:bg-green-900/20 hover:border-green-500/50 hover:text-green-400"
+                        >
+                            <Play size={14} />
+                            <span className="text-xs uppercase font-bold tracking-wider">Start</span>
+                        </Button>
+                    )}
                 </div>
             </CardContent>
 
-            {/* Footer / Actions */}
-            <CardFooter className="flex gap-3">
-                <p className="flex-1 text-sm">Click to view details</p>
-
-                <Button
-                    variant="primary"
-                    size="icon"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(`http://${app.domain}`, "_blank", "noreferrer");
+            {/* Hazard Footer - Navigation Trigger */}
+            <CardFooter
+                onClick={() => onClick(app)}
+                className="relative h-10 border-t border-iron-800 p-0 cursor-pointer overflow-hidden group/footer flex items-center justify-center"
+            >
+                {/* Background Pattern (Hazard Stripes) */}
+                <div
+                    className="absolute inset-0 opacity-0 group-hover/footer:opacity-100 transition-opacity duration-300"
+                    style={{
+                        backgroundImage:
+                            "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(249, 115, 22, 0.1) 10px, rgba(249, 115, 22, 0.1) 20px)",
                     }}
-                    title="Open Deployment"
-                >
-                    <ExternalLink size={18} />
-                </Button>
-            </CardFooter>
+                ></div>
 
-            {/* Decorative Corner */}
-            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-white/5 to-transparent pointer-events-none opacity-0 transition-opacity"></div>
+                <div className="absolute inset-0 flex items-center justify-center bg-iron-950 group-hover/footer:bg-transparent transition-colors duration-300">
+                    <span className="text-xs font-bold text-slate-500 group-hover/footer:text-forge-500 uppercase tracking-widest z-10 flex items-center gap-2 transition-colors">
+                        View Details{" "}
+                        <ArrowRight size={12} className="transition-transform group-hover/footer:translate-x-1" />
+                    </span>
+                </div>
+            </CardFooter>
         </Card>
     );
 }

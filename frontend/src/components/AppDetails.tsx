@@ -66,9 +66,13 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                             {app.status === "running" && (
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75"></span>
                             )}
-                            <span className={`relative inline-flex rounded-full h-2 w-2 ${app.status === "running" ? "bg-status-success shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-status-error shadow-[0_0_8px_rgba(239,68,68,0.6)]"}`}></span>
+                            <span
+                                className={`relative inline-flex rounded-full h-2 w-2 ${app.status === "running" ? "bg-status-success shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-status-error shadow-[0_0_8px_rgba(239,68,68,0.6)]"}`}
+                            ></span>
                         </span>
-                        <span className={`text-[10px] font-mono font-bold uppercase tracking-widest ${app.status === "running" ? "text-status-success" : "text-status-error"}`}>
+                        <span
+                            className={`text-[10px] font-mono font-bold uppercase tracking-widest ${app.status === "running" ? "text-status-success" : "text-status-error"}`}
+                        >
                             {app.status}
                         </span>
                     </div>
@@ -93,9 +97,9 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                     </Button>
                     <Button
                         onClick={() => onDelete(app.name)}
-                        variant="danger"
+                        variant="secondary"
                         size="md"
-                        className="flex items-center gap-2 uppercase text-xs tracking-wider"
+                        className="flex items-center gap-2 uppercase text-xs tracking-wider hover:bg-red-900/20 hover:border-red-500/50 hover:text-red-400"
                     >
                         <Trash2 size={16} /> Delete
                     </Button>
@@ -112,13 +116,15 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                                 CONFIGURATION
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-6 pt-4 space-y-5">
+                        <CardContent className="p-6 pt-4 flex flex-wrap gap-5 justify-between">
                             <div>
                                 <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">
                                     Repository
                                 </div>
-                                <div className="text-sm text-slate-300 font-mono bg-iron-950 p-2.5 rounded border border-iron-800 truncate">
-                                    {app.repo_url}
+                                <div className="text-sm text-slate-300 hover:text-forge-500 font-mono bg-iron-950 p-2.5 rounded border border-iron-800 truncate">
+                                    <a href={app.repo_url} target="_blank" rel="noreferrer">
+                                        {app.repo_url}
+                                    </a>
                                 </div>
                             </div>
                             <div>
@@ -133,7 +139,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                                 <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">
                                     Port
                                 </div>
-                                <div className="text-sm text-white font-mono font-bold bg-iron-950 p-2.5 rounded border border-iron-800 inline-block">
+                                <div className="text-sm text-slate-300 font-mono bg-iron-950 p-2.5 rounded border border-iron-800 inline-block">
                                     {app.port}
                                 </div>
                             </div>
