@@ -29,8 +29,16 @@ systemctl restart bare-metal-paas
 
 # 5. Sync Caddyfile on Disk (Maintenance)
 echo -e "${BLUE}Syncing Caddyfile...${NC}"
-HASH=$(systemctl show bare-metal-paas -p Environment | grep ADMIN_PASSWORD_HASH | cut -d= -f2)
-DOMAIN=$(systemctl show bare-metal-paas -p Environment | grep DASHBOARD_DOMAIN | cut -d= -f2)
+
+# Read directly from the service file for reliability
+SERVICE_FILE="/etc/systemd/system/bare-metal-paas.service"
+if [ -f "$SERVICE_FILE" ]; then
+    # Extract values between quotes: Environment="KEY=VALUE"
+    DOMAIN=$(grep 'Environment="DASHBOARD_DOMAIN=' "$SERVICE_FILE" | cut -d'=' -f2 | tr -d '"')
+    HASH=$(grep 'Environment="ADMIN_PASSWORD_HASH=' "$SERVICE_FILE" | cut -d'=' -f2 | tr -d '"')
+else
+    echo -e "${RED}Service file not found at $SERVICE_FILE${NC}"
+fi
 
 if [ -n "$HASH" ] && [ -n "$DOMAIN" ]; then
 cat <<EOF > /etc/caddy/Caddyfile
@@ -51,7 +59,7 @@ EOF
     systemctl reload caddy
     echo -e "${GREEN}Caddyfile updated and reloaded.${NC}"
 else
-    echo -e "${RED}Warning: Could not extract config from systemd. Caddyfile not updated.${NC}"
+    echo -e "${RED}Warning: Could not extract config (Hash or Domain is empty). Caddyfile not updated.${NC}"
 fi
 
 echo -e "${GREEN}=== Update Complete! ===${NC}"
