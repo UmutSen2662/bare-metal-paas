@@ -33,9 +33,9 @@ echo -e "${BLUE}Syncing Caddyfile...${NC}"
 # Read directly from the service file for reliability
 SERVICE_FILE="/etc/systemd/system/bare-metal-paas.service"
 if [ -f "$SERVICE_FILE" ]; then
-    # Extract values between quotes: Environment="KEY=VALUE"
-    DOMAIN=$(grep 'Environment="DASHBOARD_DOMAIN=' "$SERVICE_FILE" | cut -d'=' -f2 | tr -d '"')
-    HASH=$(grep 'Environment="ADMIN_PASSWORD_HASH=' "$SERVICE_FILE" | cut -d'=' -f2 | tr -d '"')
+    # Extract values using sed to handle the Environment="KEY=VALUE" format correctly
+    DOMAIN=$(grep 'Environment="DASHBOARD_DOMAIN=' "$SERVICE_FILE" | head -n 1 | sed 's/^.*Environment="DASHBOARD_DOMAIN=\([^"]*\)".*$/\1/')
+    HASH=$(grep 'Environment="ADMIN_PASSWORD_HASH=' "$SERVICE_FILE" | head -n 1 | sed 's/^.*Environment="ADMIN_PASSWORD_HASH=\([^"]*\)".*$/\1/')
 else
     echo -e "${RED}Service file not found at $SERVICE_FILE${NC}"
 fi
