@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { useParams, useNavigate, useOutletContext } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { App } from "../types";
 import { AppDetails } from "../components/AppDetails";
 
@@ -11,57 +11,51 @@ interface DetailsContext {
 export default function AppDetailsPage() {
     const { name } = useParams<{ name: string }>();
     const navigate = useNavigate();
-    const { openEditAppModal, refreshTrigger } = useOutletContext<DetailsContext>();
+    const queryClient = useQueryClient();
+    const { openEditAppModal } = useOutletContext<DetailsContext>();
 
-    const [app, setApp] = useState<App | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchApp = async () => {
-            if (!name) return;
-            try {
-                setLoading(true);
-                const res = await fetch(`/api/apps/${name}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setApp(data);
-                    setError(null);
-                } else {
-                    setError("App not found");
-                }
-            } catch (err) {
-                console.error(err);
-                setError("Failed to fetch app details");
-            } finally {
-                setLoading(false);
+    // Initial Fetch (sets up the cache for AppDetails to reuse)
+    const { data: app, isLoading, isError, error } = useQuery<App>({
+        queryKey: ["app", name],
+        queryFn: async () => {
+            if (!name) throw new Error("No app name provided");
+            const res = await fetch(`/api/apps/${name}`);
+            if (!res.ok) {
+                if (res.status === 404) throw new Error("App not found");
+                throw new Error("Failed to fetch app details");
             }
-        };
+            return res.json();
+        },
+        retry: 1,
+    });
 
-        fetchApp();
-    }, [name, refreshTrigger]);
-
-    const handleDelete = async (appName: string) => {
-        if (!confirm(`Are you sure you want to delete ${appName}? This action is irreversible.`)) return;
-
-        try {
+    const deleteMutation = useMutation({
+        mutationFn: async (appName: string) => {
             const res = await fetch(`/api/apps/${appName}`, { method: "DELETE" });
-            if (res.ok) {
-                navigate("/");
-            } else {
-                alert("Failed to delete app");
-            }
-        } catch (error) {
-            console.error("Failed to delete app", error);
-        }
+            if (!res.ok) throw new Error("Failed to delete app");
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["apps"] });
+            navigate("/");
+        },
+        onError: (err) => {
+            console.error("Failed to delete app", err);
+            alert("Failed to delete app");
+        },
+    });
+
+    const handleDelete = (appName: string) => {
+        if (!confirm(`Are you sure you want to delete ${appName}? This action is irreversible.`)) return;
+        deleteMutation.mutate(appName);
     };
 
-    if (loading)
+    if (isLoading)
         return <div className="p-8 text-center text-slate-500 font-mono animate-pulse">Scanning frequencies...</div>;
-    if (error || !app)
+    
+    if (isError || !app)
         return (
             <div className="p-8 text-center text-status-error font-mono border border-status-error/20 bg-status-error/10 rounded m-8">
-                {error || "Target not found"}
+                {error?.message || "Target not found"}
             </div>
         );
 

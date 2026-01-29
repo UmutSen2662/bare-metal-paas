@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { Plus, X, Box, Play, Terminal, Search, ChevronDown, ChevronUp, Layers, Edit2 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import presetsData from "../presets.json";
 import languagesData from "../languages.json";
 import type { App } from "../types";
+import { Button } from "./ui/Button";
+import { Input } from "./ui/Input";
 
 // Simple Icon Mapper
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -21,8 +24,6 @@ interface DeployModalProps {
 }
 
 export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, initialData }: DeployModalProps) {
-    const [isDeploying, setIsDeploying] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [useCustomDomain, setUseCustomDomain] = useState(false);
 
     // Preset UI State
@@ -36,6 +37,25 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
         language_version: "node@20",
         build_command: "npm install && npm run build",
         start_command: "npm start",
+    });
+
+    const deployMutation = useMutation({
+        mutationFn: async (data: any) => {
+            const res = await fetch("/api/deploy", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+            const responseData = await res.json();
+            if (!res.ok) {
+                throw new Error(responseData.detail || "Deployment failed");
+            }
+            return responseData;
+        },
+        onSuccess: () => {
+            onDeploySuccess();
+            onClose();
+        },
     });
 
     // Load initial data for editing
@@ -63,6 +83,7 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                 start_command: "npm start",
             });
             setUseCustomDomain(false);
+            deployMutation.reset(); // Clear previous errors
         }
     }, [isOpen, initialData, baseDomain]);
 
@@ -87,9 +108,7 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsDeploying(true);
-        setError(null);
-
+        
         let finalDomain = formData.domain;
 
         if (!useCustomDomain) {
@@ -98,30 +117,7 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
             }
         }
 
-        try {
-            const res = await fetch("/api/deploy", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...formData, domain: finalDomain }),
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                onDeploySuccess(); // This will trigger a refresh in parent
-                onClose();
-            } else {
-                setError(data.detail || "Deployment failed");
-            }
-        } catch (err: unknown) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError("An unknown error occurred");
-            }
-        } finally {
-            setIsDeploying(false);
-        }
+        deployMutation.mutate({ ...formData, domain: finalDomain });
     };
 
     const isEditing = !!initialData;
@@ -143,10 +139,10 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                 </div>
 
                 <div className="p-8">
-                    {error && (
+                    {deployMutation.isError && (
                         <div className="mb-6 p-4 bg-red-900/20 text-status-error rounded-lg text-sm border border-red-900/50 flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-status-error animate-pulse"></div>
-                            {error}
+                            {deployMutation.error.message}
                         </div>
                     )}
 
@@ -168,10 +164,10 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                                 <div className="p-4 bg-iron-900 border-t border-iron-800">
                                     <div className="relative mb-3">
                                         <Search className="absolute left-3 top-3 text-slate-500" size={16} />
-                                        <input
+                                        <Input
                                             type="text"
                                             placeholder="Search presets (e.g., Python, React)..."
-                                            className="w-full pl-9 p-2.5 text-sm bg-iron-950 border border-iron-700 rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none text-white placeholder-slate-600"
+                                            className="pl-9 bg-iron-950 text-white placeholder-slate-600"
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             autoFocus
@@ -219,15 +215,11 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
                                     App Name
                                 </label>
-                                <input
+                                <Input
                                     type="text"
                                     required
                                     disabled={isEditing}
-                                    className={`w-full p-3 border rounded-md outline-none transition-all font-mono text-sm ${
-                                        isEditing
-                                            ? "bg-iron-800 border-iron-700 text-slate-500 cursor-not-allowed"
-                                            : "bg-iron-950 border-iron-700 text-white focus:ring-1 focus:ring-forge-500 focus:border-forge-500"
-                                    }`}
+                                    className={`${isEditing ? "bg-iron-800 border-iron-700 text-slate-500 cursor-not-allowed" : ""}`}
                                     placeholder="my-app"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -261,27 +253,23 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
 
                                 {!useCustomDomain ? (
                                     <div className="flex">
-                                        <input
+                                        <Input
                                             type="text"
                                             required
-                                            className="flex-1 w-full p-3 border border-r-0 border-iron-700 bg-iron-950 text-white rounded-l-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none transition-all text-right pr-1 font-mono text-sm"
+                                            className="rounded-r-none border-r-0 text-right pr-1"
                                             placeholder="subdomain"
                                             value={formData.domain.replace(`.${baseDomain}`, "")}
                                             onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
                                         />
-                                        <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-iron-700 bg-iron-800 text-slate-400 text-sm font-mono">
+                                        <span className="inline-flex items-center px-3 rounded-r-md bg-iron-800 text-slate-400 text-sm font-mono">
                                             .{baseDomain}
                                         </span>
                                     </div>
                                 ) : (
                                     <div className="flex">
-                                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-iron-700 bg-iron-800 text-slate-500 text-sm font-mono">
-                                            http://
-                                        </span>
-                                        <input
+                                        <Input
                                             type="text"
                                             required
-                                            className="flex-1 w-full p-3 border border-iron-700 bg-iron-950 text-white rounded-r-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none transition-all font-mono text-sm"
                                             placeholder="myapp.com"
                                             value={formData.domain}
                                             onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
@@ -295,9 +283,9 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
                                 Git Repository URL
                             </label>
-                            <div className="relative flex">
+                            <div className="relative">
                                 <svg
-                                    className="absolute h-[18px] left-3 top-3"
+                                    className="absolute h-5 left-3 top-3"
                                     role="img"
                                     fill="white"
                                     viewBox="0 0 24 24"
@@ -306,10 +294,10 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                                     <title>GitHub</title>
                                     <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
                                 </svg>
-                                <input
+                                <Input
                                     type="text"
                                     required
-                                    className="w-full p-3 pl-10 border border-iron-700 bg-iron-950 text-white rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none transition-all font-mono text-sm"
+                                    className="pl-10"
                                     placeholder="https://github.com/user/repo.git"
                                     value={formData.repo_url}
                                     onChange={(e) => setFormData({ ...formData, repo_url: e.target.value })}
@@ -323,9 +311,9 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                                     Language & Version
                                 </label>
                                 <div className="relative">
-                                    <Box className="absolute left-3 top-3 text-slate-600" size={18} />
+                                    <Box className="absolute left-3 top-3 text-slate-600" size={20} />
                                     <select
-                                        className="w-full p-3 pl-10 border border-iron-700 bg-iron-950 text-white rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none appearance-none font-mono text-sm"
+                                        className="w-full p-3 pl-10 border border-iron-800 bg-iron-950 text-slate-200 rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none appearance-none font-mono text-sm"
                                         value={formData.language_version}
                                         onChange={(e) => setFormData({ ...formData, language_version: e.target.value })}
                                     >
@@ -346,11 +334,11 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                                     Start Command
                                 </label>
                                 <div className="relative">
-                                    <Play className="absolute left-3 top-3 text-slate-600" size={18} />
-                                    <input
+                                    <Play className="absolute left-3 top-3 text-slate-600" size={20} />
+                                    <Input
                                         type="text"
                                         required
-                                        className="w-full p-3 pl-10 border border-iron-700 bg-iron-950 text-white rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none transition-all font-mono text-sm"
+                                        className="pl-10"
                                         placeholder="npm start"
                                         value={formData.start_command}
                                         onChange={(e) => setFormData({ ...formData, start_command: e.target.value })}
@@ -364,10 +352,10 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                                 Build Command
                             </label>
                             <div className="relative">
-                                <Terminal className="absolute left-3 top-3 text-slate-600" size={18} />
-                                <input
+                                <Terminal className="absolute left-3 top-3 text-slate-600" size={20} />
+                                <Input
                                     type="text"
-                                    className="w-full p-3 pl-10 border border-iron-700 bg-iron-950 text-white rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none transition-all font-mono text-sm"
+                                    className="pl-10"
                                     placeholder="npm install && npm run build"
                                     value={formData.build_command}
                                     onChange={(e) => setFormData({ ...formData, build_command: e.target.value })}
@@ -375,20 +363,16 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                             </div>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={isDeploying}
-                            className="w-full bg-forge-600 hover:bg-forge-500 text-white font-bold py-4 px-4 rounded-xl shadow-[0_0_20px_rgba(234,88,12,0.2)] hover:shadow-[0_0_30px_rgba(234,88,12,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 cursor-pointer mt-6 uppercase tracking-widest border border-forge-500"
-                        >
-                            {isDeploying ? (
+                        <Button type="submit" disabled={deployMutation.isPending} variant="primary" size="lg" className="w-full">
+                            {deployMutation.isPending ? (
                                 <>
-                                    <span className="animate-spin h-5 w-5 border-2 border-b-transparent border-white rounded-full"></span>
+                                    <span className="animate-spin h-5 w-5 border-2 border-b-transparent border-white rounded-full mr-2"></span>
                                     {isEditing ? "INITIALIZING UPDATE..." : "INITIATING DEPLOYMENT..."}
                                 </>
                             ) : (
                                 <>{isEditing ? "UPDATE CONFIGURATION" : "LAUNCH APPLICATION"}</>
                             )}
-                        </button>
+                        </Button>
                     </form>
                 </div>
             </div>

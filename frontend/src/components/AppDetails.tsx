@@ -1,6 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Trash2, ExternalLink, Terminal, Edit, Clipboard, Check, Webhook } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import type { App } from "../types";
+import { Button } from "./ui/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "./ui/Card";
 
 interface AppDetailsProps {
     app: App;
@@ -8,28 +11,35 @@ interface AppDetailsProps {
     onEdit: (app: App) => void;
 }
 
-export function AppDetails({ app, onDelete, onEdit }: AppDetailsProps) {
-    const [logs, setLogs] = useState<string>("Loading logs...");
+export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProps) {
     const logsContainerRef = useRef<HTMLDivElement>(null);
     const [copied, setCopied] = useState(false);
 
-    useEffect(() => {
-        const fetchLogs = async () => {
-            try {
-                const res = await fetch(`/api/apps/${app.name}/logs`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setLogs(data.logs || "No logs available.");
-                }
-            } catch (e) {
-                console.error("Failed to fetch logs", e);
-            }
-        };
+    // 1. Live App Status
+    const { data: app } = useQuery<App>({
+        queryKey: ["app", initialApp.name],
+        queryFn: async () => {
+            const res = await fetch(`/api/apps/${initialApp.name}`);
+            if (!res.ok) throw new Error("Failed to fetch app");
+            return res.json();
+        },
+        initialData: initialApp,
+        refetchInterval: 2000,
+    });
 
-        fetchLogs();
-        const interval = setInterval(fetchLogs, 1000);
-        return () => clearInterval(interval);
-    }, [app.name]);
+    // 2. Live Logs
+    const { data: logsData } = useQuery<{ logs: string }>({
+        queryKey: ["app-logs", initialApp.name],
+        queryFn: async () => {
+            const res = await fetch(`/api/apps/${initialApp.name}/logs`);
+            if (!res.ok) throw new Error("Failed to fetch logs");
+            return res.json();
+        },
+        initialData: { logs: "Loading logs..." },
+        refetchInterval: 2000,
+    });
+
+    const logs = logsData.logs;
 
     // Auto-scroll to bottom of logs
     useEffect(() => {
@@ -49,78 +59,95 @@ export function AppDetails({ app, onDelete, onEdit }: AppDetailsProps) {
     return (
         <div className="max-w-7xl mx-auto p-8">
             <div className="flex justify-between items-start mb-10 border-b border-iron-800 pb-6">
-                <div>
-                    <h1 className="text-4xl font-display font-bold text-white mb-3 uppercase tracking-wide">
-                        {app.name}
-                    </h1>
+                <div className="flex gap-6 items-center">
+                    <h1 className="text-4xl font-display font-bold text-white uppercase tracking-wide">{app.name}</h1>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-iron-900 border border-iron-800 rounded-full">
+                        <span className={`relative flex h-2 w-2`}>
+                            {app.status === "running" && (
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75"></span>
+                            )}
+                            <span className={`relative inline-flex rounded-full h-2 w-2 ${app.status === "running" ? "bg-status-success shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-status-error shadow-[0_0_8px_rgba(239,68,68,0.6)]"}`}></span>
+                        </span>
+                        <span className={`text-[10px] font-mono font-bold uppercase tracking-widest ${app.status === "running" ? "text-status-success" : "text-status-error"}`}>
+                            {app.status}
+                        </span>
+                    </div>
                     <a
                         href={`http://${app.domain}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 text-forge-500 hover:text-forge-400 font-mono text-sm border border-iron-800 bg-iron-900 px-3 py-1 rounded hover:border-forge-500 transition-colors"
+                        className="w-fit inline-flex items-center gap-2 text-forge-500 font-mono text-sm border border-iron-800 bg-iron-900 px-3 py-1 rounded hover:border-forge-500 transition-colors"
                     >
                         {app.domain} <ExternalLink size={14} />
                     </a>
                 </div>
 
                 <div className="flex gap-3">
-                    <button
+                    <Button
                         onClick={() => onEdit(app)}
-                        className="flex items-center gap-2 bg-iron-900 text-slate-300 border border-iron-700 hover:bg-iron-800 hover:text-white px-5 py-2.5 rounded-lg transition-colors font-bold uppercase text-xs tracking-wider cursor-pointer"
+                        variant="secondary"
+                        size="md"
+                        className="flex items-center gap-2 uppercase text-xs tracking-wider"
                     >
                         <Edit size={16} /> Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={() => onDelete(app.name)}
-                        className="flex items-center gap-2 bg-iron-900 text-status-error border border-iron-700 hover:bg-red-950/30 hover:border-status-error/50 px-5 py-2.5 rounded-lg transition-colors font-bold uppercase text-xs tracking-wider cursor-pointer"
+                        variant="danger"
+                        size="md"
+                        className="flex items-center gap-2 uppercase text-xs tracking-wider"
                     >
                         <Trash2 size={16} /> Delete
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Info Column */}
                 <div className="space-y-6">
-                    <div className="bg-iron-900 rounded-xl border border-iron-800 p-6">
-                        <h3 className="font-bold text-slate-200 mb-4 border-b border-iron-800 pb-2 flex items-center gap-2">
-                            <div className="w-1.5 h-4 bg-forge-500 rounded-sm"></div>
-                            CONFIGURATION
-                        </h3>
-                        <div className="space-y-5">
+                    <Card>
+                        <CardHeader className="p-6 py-4">
+                            <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest text-slate-400">
+                                <div className="w-1.5 h-4 bg-forge-500 rounded-sm"></div>
+                                CONFIGURATION
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6 pt-4 space-y-5">
                             <div>
-                                <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">
+                                <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">
                                     Repository
                                 </div>
-                                <div className="text-sm text-slate-300 font-mono bg-iron-950 p-2 rounded border border-iron-800 truncate">
+                                <div className="text-sm text-slate-300 font-mono bg-iron-950 p-2.5 rounded border border-iron-800 truncate">
                                     {app.repo_url}
                                 </div>
                             </div>
                             <div>
-                                <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">
+                                <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">
                                     Language
                                 </div>
-                                <div className="text-sm text-slate-300 font-medium bg-iron-950 p-2 rounded border border-iron-800 inline-block">
+                                <div className="text-sm text-slate-300 font-medium bg-iron-950 p-2.5 rounded border border-iron-800 inline-block">
                                     {app.language_version}
                                 </div>
                             </div>
                             <div>
-                                <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">
+                                <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">
                                     Port
                                 </div>
-                                <div className="text-sm text-white font-mono font-bold bg-iron-950 p-2 rounded border border-iron-800 inline-block">
+                                <div className="text-sm text-white font-mono font-bold bg-iron-950 p-2.5 rounded border border-iron-800 inline-block">
                                     {app.port}
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
 
-                    <div className="bg-iron-900 rounded-xl border border-iron-800 p-6">
-                        <h3 className="font-bold text-slate-200 mb-4 border-b border-iron-800 pb-2 flex items-center gap-2">
-                            <div className="w-1.5 h-4 bg-forge-500 rounded-sm"></div>
-                            CONTINUOUS DEPLOYMENT
-                        </h3>
-                        <div className="space-y-3">
+                    <Card>
+                        <CardHeader className="p-6 py-4">
+                            <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest text-slate-400">
+                                <div className="w-1.5 h-4 bg-forge-500 rounded-sm"></div>
+                                CONTINUOUS DEPLOYMENT
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6 pt-4 space-y-4">
                             <div className="text-xs text-slate-500 uppercase font-bold tracking-wider flex items-center gap-2">
                                 <Webhook size={14} /> Webhook URL
                             </div>
@@ -128,9 +155,11 @@ export function AppDetails({ app, onDelete, onEdit }: AppDetailsProps) {
                                 <code className="flex-1 text-xs text-slate-400 bg-iron-950 block p-2.5 rounded font-mono break-all border border-iron-800 truncate">
                                     {webhookUrl}
                                 </code>
-                                <button
+                                <Button
                                     onClick={copyWebhook}
-                                    className="p-2.5 bg-iron-950 border border-iron-800 hover:bg-iron-800 rounded text-slate-500 hover:text-white transition-colors cursor-pointer"
+                                    variant="secondary"
+                                    size="icon"
+                                    className="h-9 w-9 bg-iron-950"
                                     title="Copy to clipboard"
                                 >
                                     {copied ? (
@@ -138,23 +167,25 @@ export function AppDetails({ app, onDelete, onEdit }: AppDetailsProps) {
                                     ) : (
                                         <Clipboard size={16} />
                                     )}
-                                </button>
+                                </Button>
                             </div>
                             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                                 Add this URL to your GitHub/GitLab repository settings under "Webhooks" (Content-Type:
                                 application/json).
                             </p>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
 
-                    <div className="bg-iron-900 rounded-xl border border-iron-800 p-6">
-                        <h3 className="font-bold text-slate-200 mb-4 border-b border-iron-800 pb-2 flex items-center gap-2">
-                            <div className="w-1.5 h-4 bg-forge-500 rounded-sm"></div>
-                            COMMANDS
-                        </h3>
-                        <div className="space-y-4">
+                    <Card>
+                        <CardHeader className="p-6 py-4">
+                            <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest text-slate-400">
+                                <div className="w-1.5 h-4 bg-forge-500 rounded-sm"></div>
+                                COMMANDS
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6 pt-4 space-y-5">
                             <div>
-                                <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">
+                                <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">
                                     Build
                                 </div>
                                 <code className="text-xs text-forge-400 bg-iron-950 block p-2.5 rounded border border-iron-800 font-mono break-all">
@@ -162,24 +193,24 @@ export function AppDetails({ app, onDelete, onEdit }: AppDetailsProps) {
                                 </code>
                             </div>
                             <div>
-                                <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">
+                                <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">
                                     Start
                                 </div>
                                 <code className="text-xs text-status-success bg-iron-950 block p-2.5 rounded border border-iron-800 font-mono break-all">
                                     {app.start_command}
                                 </code>
                             </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Logs Column */}
-                <div className="lg:col-span-2 flex flex-col h-[600px]">
-                    <div className="bg-iron-950 rounded-xl shadow-2xl flex flex-col h-full overflow-hidden border border-iron-800">
-                        <div className="p-3 bg-iron-900 border-b border-iron-800 flex justify-between items-center">
-                            <div className="flex items-center gap-2 text-slate-400 font-mono text-sm uppercase tracking-wider font-bold">
+                <div className="lg:col-span-2 flex flex-col h-[70vh]">
+                    <Card className="flex-1 flex flex-col overflow-hidden bg-iron-950 border-iron-800">
+                        <CardHeader className="bg-iron-900 border-b border-iron-800 p-4 flex flex-row justify-between items-center">
+                            <CardTitle className="text-sm font-mono flex items-center gap-2 uppercase tracking-widest text-slate-400">
                                 <Terminal size={16} className="text-forge-500" /> Live Runtime Logs
-                            </div>
+                            </CardTitle>
                             <div className="flex items-center gap-2">
                                 <span className="relative flex h-2 w-2">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75"></span>
@@ -187,14 +218,16 @@ export function AppDetails({ app, onDelete, onEdit }: AppDetailsProps) {
                                 </span>
                                 <span className="text-xs text-slate-500 font-mono">LIVE FEED</span>
                             </div>
-                        </div>
-                        <div
-                            ref={logsContainerRef}
-                            className="flex-1 p-4 overflow-y-auto font-mono text-sm custom-scrollbar bg-black/50"
-                        >
-                            <pre className="whitespace-pre-wrap text-slate-400 leading-relaxed">{logs}</pre>
-                        </div>
-                    </div>
+                        </CardHeader>
+                        <CardContent className="flex-1 p-0 overflow-hidden bg-black/50">
+                            <div
+                                ref={logsContainerRef}
+                                className="h-full w-full p-4 overflow-y-auto font-mono text-sm custom-scrollbar"
+                            >
+                                <pre className="whitespace-pre-wrap text-slate-400 leading-relaxed">{logs}</pre>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </div>

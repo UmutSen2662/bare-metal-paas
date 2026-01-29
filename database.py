@@ -16,6 +16,7 @@ class AppModel(BaseModel):
     start_command: str
     language_version: str
     deploy_token: Optional[str] = None
+    status: str = "stopped"
 
 
 def get_db_connection():

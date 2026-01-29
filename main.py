@@ -9,6 +9,7 @@ import traceback
 import os
 import psutil
 import subprocess
+import shutil
 from contextlib import asynccontextmanager
 
 
@@ -18,8 +19,8 @@ async def lifespan(app: FastAPI):
     database.init_db()
     if os.geteuid() != 0:
         print("WARNING: Not running as root. System operations (useradd, systemd) will fail.")
-    if not os.path.exists("/usr/local/bin/mise"):
-        print("WARNING: Mise not found at /usr/local/bin/mise. Deployments will fail.")
+    if not shutil.which("mise") and not os.path.exists("/usr/local/bin/mise"):
+        print("WARNING: Mise not found in PATH or at /usr/local/bin/mise. Deployments will fail.")
     
     # Sync Caddy Config on Startup
     try:
@@ -50,7 +51,10 @@ class DeployRequest(BaseModel):
 @app.get("/api/apps")
 def get_apps():
     try:
-        return database.get_apps()
+        apps = database.get_apps()
+        for app in apps:
+            app.status = system_ops.get_service_status(app.name)
+        return apps
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -89,6 +93,8 @@ def get_app(name: str):
     app = database.get_app_by_name(name)
     if not app:
         raise HTTPException(status_code=404, detail="App not found")
+    
+    app.status = system_ops.get_service_status(app.name)
     return app
 
 

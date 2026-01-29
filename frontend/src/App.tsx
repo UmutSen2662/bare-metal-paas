@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import "./index.css";
 
 import { Navbar } from "./components/Navbar";
@@ -9,23 +10,19 @@ import type { App } from "./types";
 export default function App() {
     const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
     const [modalInitialData, setModalInitialData] = useState<App | null>(null);
-    const [baseDomain, setBaseDomain] = useState<string>("paas.local");
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    useEffect(() => {
-        const fetchConfig = async () => {
-            try {
-                const res = await fetch("/api/config");
-                if (res.ok) {
-                    const data = await res.json();
-                    setBaseDomain(data.base_domain);
-                }
-            } catch (error) {
-                console.error("Failed to fetch config", error);
-            }
-        };
-        fetchConfig();
-    }, []);
+    const { data: config } = useQuery({
+        queryKey: ["config"],
+        queryFn: async () => {
+            const res = await fetch("/api/config");
+            if (!res.ok) throw new Error("Failed to fetch config");
+            return res.json();
+        },
+        staleTime: Infinity,
+    });
+
+    const baseDomain = config?.base_domain || "paas.local";
 
     const openNewAppModal = () => {
         setModalInitialData(null);

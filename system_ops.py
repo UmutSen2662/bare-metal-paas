@@ -183,6 +183,28 @@ def remove_systemd_service(name: str):
     run_command("systemctl daemon-reload")
 
 
+def get_service_status(name: str) -> str:
+    """
+    Returns 'running' if the systemd service is active, 'stopped' otherwise.
+    """
+    service_name = f"{name}.service"
+    try:
+        # systemctl is-active returns 0 if active, non-zero otherwise.
+        cmd = f"systemctl is-active {service_name}"
+        result = subprocess.run(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        if result.returncode == 0:
+            return "running"
+        return "stopped"
+    except Exception:
+        return "stopped"
+
+
 def update_caddy_config():
     apps = get_apps()
     

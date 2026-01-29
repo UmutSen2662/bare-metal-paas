@@ -8,4 +8,5 @@ export interface App {
   build_command: string;
   start_command: string;
   deploy_token?: string;
+  status: string;
 }

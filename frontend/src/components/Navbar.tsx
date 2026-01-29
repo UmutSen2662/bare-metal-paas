@@ -1,5 +1,6 @@
 import { LayoutDashboard, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "./ui/Button";
 
 interface NavbarProps {
     onOpenNew: () => void;
@@ -17,12 +18,11 @@ export function Navbar({ onOpenNew }: NavbarProps) {
                 </h1>
             </Link>
 
-            <button
-                onClick={onOpenNew}
-                className="my-6 bg-forge-500 hover:bg-forge-600 text-white font-display font-bold py-1.5 px-4 rounded transition-all duration-200 flex items-center gap-2 shadow-lg shadow-orange-900/20 hover:shadow-orange-900/40 cursor-pointer"
-            >
-                <Plus size={18} /> NEW APP
-            </button>
+            <div className="flex items-center gap-6 py-4">
+                <Button onClick={onOpenNew} variant="primary" size="md" className="flex items-center gap-2">
+                    <Plus size={18} /> NEW APP
+                </Button>
+            </div>
         </nav>
     );
 }

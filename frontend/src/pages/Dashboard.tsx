@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { ServerCrash } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { App } from "../types";
 import { SystemStats } from "../components/SystemStats";
 import { AppCard } from "../components/AppCard";
+import { Button } from "../components/ui/Button";
 
 interface DashboardContext {
     openNewAppModal: () => void;
@@ -11,26 +13,26 @@ interface DashboardContext {
 }
 
 export default function Dashboard() {
-    const [apps, setApps] = useState<App[]>([]);
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     // We receive the "open modal" function and "refresh" signal from the Layout (main.tsx)
     const { openNewAppModal, refreshTrigger } = useOutletContext<DashboardContext>();
 
-    useEffect(() => {
-        const fetchApps = async () => {
-            try {
-                const res = await fetch("/api/apps");
-                if (res.ok) {
-                    const data = await res.json();
-                    setApps(data || []);
-                }
-            } catch (error) {
-                console.error("Failed to fetch apps", error);
-            }
-        };
+    const { data: apps = [] } = useQuery<App[]>({
+        queryKey: ["apps"],
+        queryFn: async () => {
+            const res = await fetch("/api/apps");
+            if (!res.ok) throw new Error("Network response was not ok");
+            return res.json();
+        },
+        refetchInterval: 5000,
+    });
 
-        fetchApps();
-    }, [refreshTrigger]);
+    useEffect(() => {
+        if (refreshTrigger > 0) {
+            queryClient.invalidateQueries({ queryKey: ["apps"] });
+        }
+    }, [refreshTrigger, queryClient]);
 
     return (
         <div className="max-w-7xl mx-auto p-6 md:p-8">
@@ -38,9 +40,7 @@ export default function Dashboard() {
             <div className="mb-12">
                 <div className="flex items-center gap-2 mb-6 border-b border-iron-800 pb-2">
                     <div className="h-2 w-2 bg-forge-500 rounded-sm"></div>
-                    <h2 className="text-sm font-display font-bold text-slate-400 uppercase tracking-widest">
-                        System Telemetry
-                    </h2>
+                    <h2 className="text-sm font-display font-bold text-slate-400 uppercase tracking-widest">System Telemetry</h2>
                 </div>
                 <SystemStats />
             </div>
@@ -68,12 +68,13 @@ export default function Dashboard() {
                         <p className="text-slate-500 max-w-sm mx-auto mb-8 font-mono text-sm">
                             No active workloads detected. Initialize a new deployment to begin.
                         </p>
-                        <button
+                        <Button
                             onClick={openNewAppModal}
-                            className="bg-forge-600 hover:bg-forge-500 text-white font-display font-bold py-3 px-6 rounded transition-all duration-200 shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] cursor-pointer"
+                            variant="primary"
+                            size="lg"
                         >
                             INITIALIZE DEPLOYMENT
-                        </button>
+                        </Button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

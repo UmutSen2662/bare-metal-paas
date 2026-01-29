@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card } from "./ui/Card";
 
 interface SystemStatsData {
     cpu_percent: number;
@@ -33,10 +34,10 @@ const StatCard = ({ label, subLabel, percentage }: StatCardProps) => {
     const strokeColor = percentage > 80 ? "#ef4444" : "#f97316"; // status-error or forge-500
 
     return (
-        <div className="flex items-center justify-between p-5 rounded-xl bg-iron-900 border border-iron-800 shadow-xl relative overflow-hidden group">
+        <Card className="flex items-center justify-between p-5 relative overflow-hidden group">
             {/* 1. LEFT SIDE: Text Labels */}
             <div className="flex flex-col z-10">
-                <span className="font-bold tracking-widest text-slate-300 uppercase mb-1">{label}</span>
+                <span className="text font-bold tracking-widest text-slate-300 uppercase mb-1">{label}</span>
                 {/* The "Comparison Stat Thingy" goes here */}
                 <span className="text-sm font-mono text-slate-400">{subLabel}</span>
             </div>
@@ -67,33 +68,29 @@ const StatCard = ({ label, subLabel, percentage }: StatCardProps) => {
                     <span className="text-xl font-display font-bold text-white">{Math.round(percentage)}%</span>
                 </div>
             </div>
-        </div>
+        </Card>
     );
 };
 
 export function SystemStats() {
-    const [stats, setStats] = useState<SystemStatsData | null>(null);
+    const { data: stats, isLoading } = useQuery<SystemStatsData>({
+        queryKey: ["system-stats"],
+        queryFn: async () => {
+            const res = await fetch("/api/system-stats");
+            if (!res.ok) throw new Error("Network response was not ok");
+            return res.json();
+        },
+        refetchInterval: 2000,
+    });
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const res = await fetch("/api/system-stats");
-                if (res.ok) setStats(await res.json());
-            } catch (e) {
-                console.error("Stats fetch failed", e);
-            }
-        };
-
-        fetchStats();
-        const interval = setInterval(fetchStats, 2000);
-        return () => clearInterval(interval);
-    }, []);
-
-    if (!stats)
+    if (isLoading || !stats)
         return (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {[1, 2, 3].map((i) => (
-                    <div key={i} className="glass-panel h-24 animate-pulse rounded-xl"></div>
+                    <div
+                        key={i}
+                        className="bg-iron-900/80 backdrop-blur-md border border-iron-800 rounded-xl h-24 animate-pulse"
+                    ></div>
                 ))}
             </div>
         );

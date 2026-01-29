@@ -118,14 +118,21 @@ if [ -f /etc/caddy/Caddyfile ]; then
 fi
 
 # This config proxies the base domain to our backend
+# We include the basic_auth here so the dashboard is secure immediately,
+# before the Python backend performs its first sync.
 cat <<EOF > /etc/caddy/Caddyfile
-${DASHBOARD_DOMAIN} {
-    reverse_proxy localhost:1323
+{
+    debug
 }
 
-:80 {
-    # Default listener for apps (will be managed by API dynamically)
-    respond "BareMetal PaaS Gateway"
+${DASHBOARD_DOMAIN} {
+    @secure {
+        not path /api/hooks/*
+    }
+    basic_auth @secure {
+        admin ${ADMIN_PASSWORD_HASH}
+    }
+    reverse_proxy localhost:1323
 }
 EOF
 

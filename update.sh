@@ -27,4 +27,31 @@ echo -e "${BLUE}Rebuilding Frontend...${NC}"
 echo -e "${BLUE}Restarting Systemd Service...${NC}"
 systemctl restart bare-metal-paas
 
+# 5. Sync Caddyfile on Disk (Maintenance)
+echo -e "${BLUE}Syncing Caddyfile...${NC}"
+HASH=$(systemctl show bare-metal-paas -p Environment | grep ADMIN_PASSWORD_HASH | cut -d= -f2)
+DOMAIN=$(systemctl show bare-metal-paas -p Environment | grep DASHBOARD_DOMAIN | cut -d= -f2)
+
+if [ -n "$HASH" ] && [ -n "$DOMAIN" ]; then
+cat <<EOF > /etc/caddy/Caddyfile
+{
+    debug
+}
+
+$DOMAIN {
+    @secure {
+        not path /api/hooks/*
+    }
+    basic_auth @secure {
+        admin $HASH
+    }
+    reverse_proxy localhost:1323
+}
+EOF
+    systemctl reload caddy
+    echo -e "${GREEN}Caddyfile updated and reloaded.${NC}"
+else
+    echo -e "${RED}Warning: Could not extract config from systemd. Caddyfile not updated.${NC}"
+fi
+
 echo -e "${GREEN}=== Update Complete! ===${NC}"
