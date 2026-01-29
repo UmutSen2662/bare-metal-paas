@@ -309,9 +309,14 @@ if os.path.exists(frontend_path):
     # Serve index.html for all other routes (SPA support)
     @app.get("/{full_path:path}")
     async def serve_frontend(full_path: str):
-        # Allow API routes to pass through if they weren't caught above (though FastAPI matches specific routes first)
+        # Allow API routes to pass through if they weren't caught above
         if full_path.startswith("api/"):
             raise HTTPException(status_code=404, detail="API endpoint not found")
+            
+        # Check if the requested file exists in the frontend_path
+        file_path = os.path.join(frontend_path, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
             
         return FileResponse(os.path.join(frontend_path, "index.html"))
 
