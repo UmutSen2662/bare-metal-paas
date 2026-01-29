@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { ServerCrash } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import type { App } from "../types";
 import { SystemStats } from "../components/SystemStats";
@@ -34,35 +34,49 @@ export default function Dashboard() {
 
     return (
         <div className="max-w-7xl mx-auto p-6 md:p-8">
-            <div className="mb-8">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">System Status</h2>
+            {/* Heads Up Display (HUD) */}
+            <div className="mb-12">
+                <div className="flex items-center gap-2 mb-6 border-b border-iron-800 pb-2">
+                    <div className="h-2 w-2 bg-forge-500 rounded-sm"></div>
+                    <h2 className="text-sm font-display font-bold text-slate-400 uppercase tracking-widest">
+                        System Telemetry
+                    </h2>
+                </div>
                 <SystemStats />
             </div>
 
+            {/* Deployment Grid */}
             <div>
-                <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                    Deployed Applications
-                    <span className="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full">{apps.length}</span>
-                </h2>
+                <div className="flex items-center justify-between mb-6 border-b border-iron-800 pb-2">
+                    <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 bg-forge-500 rounded-sm"></div>
+                        <h2 className="text-sm font-display font-bold text-slate-400 uppercase tracking-widest">
+                            Active Deployments
+                        </h2>
+                    </div>
+                    <span className="bg-iron-800 text-forge-500 font-mono text-xs px-2 py-0.5 rounded border border-iron-700">
+                        COUNT: {apps.length}
+                    </span>
+                </div>
 
                 {apps.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
-                        <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Plus size={32} />
+                    <div className="text-center py-20 bg-iron-900/50 rounded-xl border border-dashed border-iron-700 backdrop-blur-sm">
+                        <div className="w-20 h-20 bg-iron-800/50 text-iron-600 rounded-full flex items-center justify-center mx-auto mb-6 border border-iron-700">
+                            <ServerCrash size={40} />
                         </div>
-                        <h3 className="text-lg font-medium text-slate-900 mb-2">No apps deployed yet</h3>
-                        <p className="text-slate-500 max-w-sm mx-auto mb-6">
-                            Get started by deploying your first application to the bare metal infrastructure.
+                        <h3 className="text-xl font-display font-bold text-white mb-2 tracking-wide">SYSTEM IDLE</h3>
+                        <p className="text-slate-500 max-w-sm mx-auto mb-8 font-mono text-sm">
+                            No active workloads detected. Initialize a new deployment to begin.
                         </p>
                         <button
                             onClick={openNewAppModal}
-                            className="text-blue-600 font-medium hover:text-blue-700 hover:underline cursor-pointer"
+                            className="bg-forge-600 hover:bg-forge-500 text-white font-display font-bold py-3 px-6 rounded transition-all duration-200 shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)] cursor-pointer"
                         >
-                            Deploy now &rarr;
+                            INITIALIZE DEPLOYMENT
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {apps.map((app) => (
                             <AppCard key={app.id || app.name} app={app} onClick={(a) => navigate(`/apps/${a.name}`)} />
                         ))}

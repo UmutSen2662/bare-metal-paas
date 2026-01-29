@@ -1,1 +1,47 @@
 @import "tailwindcss";
+
+@theme {
+  /* PAGE BACKGROUND */
+  --color-iron-950: #050a10; 
+  
+  /* COMPONENT BACKGROUNDS */
+  --color-iron-900: #0f1623; 
+  --color-iron-800: #1e293b; 
+  --color-iron-700: #334155; /* Borders (Oxidized) */
+  
+  /* ACCENTS */
+  --color-forge-400: #fbbf24; /* Amber Glow (Warning/Building) */
+  --color-forge-500: #f97316; /* Orange */
+  --color-forge-600: #ea580c; /* Darker Orange */
+  --color-forge-900: #7c2d12; /* Burnt (Borders/Backgrounds) */
+  --color-forge-glow: rgba(249, 115, 22, 0.15); /* Subtle glow */
+
+  /* STATUS */
+  --color-status-success: #22c55e;
+  --color-status-error: #ef4444;
+  
+  /* FONTS */
+  --font-display: "Chakra Petch", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-sans: "Inter", sans-serif;
+}
+
+html, body, #root {
+    background-color: var(--color-iron-950);
+    color: #e2e8f0;
+    min-height: 100vh;
+    font-family: var(--font-sans);
+}
+
+/* Glass Panel Utility - Darker Version */
+.glass-panel {
+    background-color: rgba(15, 22, 35, 0.8); /* iron-900 / 0.8 */
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--color-iron-800);
+}
+
+/* Heat Glow Effect */
+.heat-glow:hover {
+    border-color: var(--color-forge-500);
+    box-shadow: 0 0 15px var(--color-forge-glow);
+}

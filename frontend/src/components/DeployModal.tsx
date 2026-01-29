@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, X, Github, Box, Play, Terminal, Search, ChevronDown, ChevronUp, Layers, Edit2 } from "lucide-react";
+import { Plus, X, Box, Play, Terminal, Search, ChevronDown, ChevronUp, Layers, Edit2 } from "lucide-react";
 import presetsData from "../presets.json";
 import languagesData from "../languages.json";
 import type { App } from "../types";
@@ -51,9 +51,6 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
             });
 
             // Determine if it was a custom domain
-            // Heuristic: if it doesn't end with baseDomain, it's likely custom
-            // or if user manually set it.
-            // Simplified check:
             setUseCustomDomain(!initialData.domain.endsWith(baseDomain));
         } else if (isOpen && !initialData) {
             // Reset
@@ -93,21 +90,9 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
         setIsDeploying(true);
         setError(null);
 
-        // If editing and using subdomains, we need to be careful not to double-append
-        // But formData.domain usually stores the *input* part in "New" mode.
-        // In "Edit" mode, we populated it with the FULL domain.
-
         let finalDomain = formData.domain;
 
         if (!useCustomDomain) {
-            // Subdomain logic
-            // If we are editing, formData.domain might be "app.base.com" or just "app" depending on how we want to handle it.
-            // For simplicity: In Edit mode, we assume the user might edit the whole string or we strip it.
-            // Let's refine the Edit logic above.
-            // BETTER APPROACH: In Edit mode, if it matches baseDomain, strip it for the input.
-
-            // Wait, to avoid complexity, let's just always submit what's in the box if custom,
-            // or append if not.
             if (!formData.domain.includes(baseDomain)) {
                 finalDomain = `${formData.domain}.${baseDomain}`;
             }
@@ -142,16 +127,16 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
     const isEditing = !!initialData;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div className="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
-                    <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        {isEditing ? <Edit2 className="text-blue-600" /> : <Plus className="text-blue-600" />}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-iron-950/80 backdrop-blur-sm transition-all">
+            <div className="bg-iron-900 border border-iron-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar ring-1 ring-white/10">
+                <div className="p-6 border-b border-iron-800 flex justify-between items-center sticky top-0 bg-iron-900/95 backdrop-blur z-10">
+                    <h2 className="text-xl font-display font-bold text-white flex items-center gap-2 uppercase tracking-wide">
+                        {isEditing ? <Edit2 className="text-forge-500" /> : <Plus className="text-forge-500" />}
                         {isEditing ? "Update Application" : "Deploy New App"}
                     </h2>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors"
+                        className="p-2 hover:bg-iron-800 rounded-lg text-slate-500 hover:text-white transition-colors cursor-pointer"
                     >
                         <X size={20} />
                     </button>
@@ -159,33 +144,34 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
 
                 <div className="p-8">
                     {error && (
-                        <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">
+                        <div className="mb-6 p-4 bg-red-900/20 text-status-error rounded-lg text-sm border border-red-900/50 flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-status-error animate-pulse"></div>
                             {error}
                         </div>
                     )}
 
                     {!isEditing && (
-                        <div className="mb-6 border border-slate-200 rounded-lg overflow-hidden">
+                        <div className="mb-8 border border-iron-800 rounded-lg overflow-hidden">
                             <button
                                 type="button"
                                 onClick={() => setIsPresetsOpen(!isPresetsOpen)}
-                                className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 transition-colors text-slate-700 font-medium"
+                                className="w-full flex items-center justify-between p-4 bg-iron-950 hover:bg-iron-800/80 transition-colors text-slate-300 font-medium cursor-pointer"
                             >
                                 <div className="flex items-center gap-2">
-                                    <Layers size={18} className="text-blue-500" />
+                                    <Layers size={18} className="text-forge-500" />
                                     <span>Quick Configuration Presets</span>
                                 </div>
                                 {isPresetsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                             </button>
 
                             {isPresetsOpen && (
-                                <div className="p-4 bg-white border-t border-slate-200">
+                                <div className="p-4 bg-iron-900 border-t border-iron-800">
                                     <div className="relative mb-3">
-                                        <Search className="absolute left-3 top-3 text-slate-400" size={16} />
+                                        <Search className="absolute left-3 top-3 text-slate-500" size={16} />
                                         <input
                                             type="text"
                                             placeholder="Search presets (e.g., Python, React)..."
-                                            className="w-full pl-9 p-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full pl-9 p-2.5 text-sm bg-iron-950 border border-iron-700 rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none text-white placeholder-slate-600"
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             autoFocus
@@ -200,13 +186,13 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                                                     key={preset.id}
                                                     type="button"
                                                     onClick={() => applyPreset(preset.id)}
-                                                    className="flex items-start gap-3 p-3 text-left border border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                                                    className="flex items-start gap-3 p-3 text-left border border-iron-800 rounded-lg hover:border-forge-500 hover:bg-iron-800 transition-all group cursor-pointer"
                                                 >
-                                                    <div className="mt-1 text-slate-400 group-hover:text-blue-500">
+                                                    <div className="mt-1 text-slate-600 group-hover:text-forge-500 transition-colors">
                                                         <Icon size={20} />
                                                     </div>
                                                     <div>
-                                                        <div className="font-medium text-slate-800 text-sm">
+                                                        <div className="font-bold text-slate-200 text-sm group-hover:text-white">
                                                             {preset.name}
                                                         </div>
                                                         <div className="text-xs text-slate-500 mt-0.5">
@@ -217,7 +203,7 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                                             );
                                         })}
                                         {filteredPresets.length === 0 && (
-                                            <div className="col-span-2 text-center text-slate-500 py-4 text-sm">
+                                            <div className="col-span-2 text-center text-slate-600 py-4 text-sm font-mono">
                                                 No presets found matching "{searchQuery}"
                                             </div>
                                         )}
@@ -230,35 +216,43 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">App Name</label>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                                    App Name
+                                </label>
                                 <input
                                     type="text"
                                     required
                                     disabled={isEditing}
-                                    className={`w-full p-2.5 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${isEditing ? "bg-slate-100 text-slate-500 cursor-not-allowed" : ""}`}
+                                    className={`w-full p-3 border rounded-md outline-none transition-all font-mono text-sm ${
+                                        isEditing
+                                            ? "bg-iron-800 border-iron-700 text-slate-500 cursor-not-allowed"
+                                            : "bg-iron-950 border-iron-700 text-white focus:ring-1 focus:ring-forge-500 focus:border-forge-500"
+                                    }`}
                                     placeholder="my-app"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 />
                                 {isEditing && (
-                                    <p className="text-xs text-slate-500 mt-1">App name cannot be changed.</p>
+                                    <p className="text-xs text-slate-600 mt-2 font-mono">ID cannot be changed.</p>
                                 )}
                             </div>
 
                             <div>
-                                <div className="flex justify-between items-center mb-1">
-                                    <label className="block text-sm font-medium text-slate-700">Domain</label>
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">
+                                        Domain
+                                    </label>
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="checkbox"
                                             id="useCustomDomain"
-                                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                            className="w-3.5 h-3.5 text-forge-600 rounded focus:ring-forge-500 bg-iron-950 border-iron-700 accent-forge-500"
                                             checked={useCustomDomain}
                                             onChange={(e) => setUseCustomDomain(e.target.checked)}
                                         />
                                         <label
                                             htmlFor="useCustomDomain"
-                                            className="text-xs text-slate-500 cursor-pointer select-none"
+                                            className="text-xs text-slate-400 cursor-pointer select-none hover:text-white"
                                         >
                                             Custom
                                         </label>
@@ -270,24 +264,24 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                                         <input
                                             type="text"
                                             required
-                                            className="flex-1 w-full p-2.5 border border-r-0 border-slate-300 rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-right pr-1"
+                                            className="flex-1 w-full p-3 border border-r-0 border-iron-700 bg-iron-950 text-white rounded-l-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none transition-all text-right pr-1 font-mono text-sm"
                                             placeholder="subdomain"
                                             value={formData.domain.replace(`.${baseDomain}`, "")}
                                             onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
                                         />
-                                        <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-slate-300 bg-slate-100 text-slate-600 text-sm font-medium">
+                                        <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-iron-700 bg-iron-800 text-slate-400 text-sm font-mono">
                                             .{baseDomain}
                                         </span>
                                     </div>
                                 ) : (
                                     <div className="flex">
-                                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-slate-300 bg-slate-50 text-slate-500 text-sm">
+                                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-iron-700 bg-iron-800 text-slate-500 text-sm font-mono">
                                             http://
                                         </span>
                                         <input
                                             type="text"
                                             required
-                                            className="flex-1 w-full p-2.5 border border-slate-300 rounded-r-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                            className="flex-1 w-full p-3 border border-iron-700 bg-iron-950 text-white rounded-r-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none transition-all font-mono text-sm"
                                             placeholder="myapp.com"
                                             value={formData.domain}
                                             onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
@@ -298,13 +292,24 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Git Repository URL</label>
-                            <div className="relative">
-                                <Github className="absolute left-3 top-3 text-slate-400" size={18} />
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                                Git Repository URL
+                            </label>
+                            <div className="relative flex">
+                                <svg
+                                    className="absolute h-[18px] left-3 top-3"
+                                    role="img"
+                                    fill="white"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <title>GitHub</title>
+                                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                                </svg>
                                 <input
                                     type="text"
                                     required
-                                    className="w-full p-2.5 pl-10 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                    className="w-full p-3 pl-10 border border-iron-700 bg-iron-950 text-white rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none transition-all font-mono text-sm"
                                     placeholder="https://github.com/user/repo.git"
                                     value={formData.repo_url}
                                     onChange={(e) => setFormData({ ...formData, repo_url: e.target.value })}
@@ -314,13 +319,13 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
                                     Language & Version
                                 </label>
                                 <div className="relative">
-                                    <Box className="absolute left-3 top-3 text-slate-400" size={18} />
+                                    <Box className="absolute left-3 top-3 text-slate-600" size={18} />
                                     <select
-                                        className="w-full p-2.5 pl-10 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                                        className="w-full p-3 pl-10 border border-iron-700 bg-iron-950 text-white rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none appearance-none font-mono text-sm"
                                         value={formData.language_version}
                                         onChange={(e) => setFormData({ ...formData, language_version: e.target.value })}
                                     >
@@ -330,16 +335,22 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                                             </option>
                                         ))}
                                     </select>
+                                    <ChevronDown
+                                        className="absolute right-3 top-3 text-slate-600 pointer-events-none"
+                                        size={16}
+                                    />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Start Command</label>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                                    Start Command
+                                </label>
                                 <div className="relative">
-                                    <Play className="absolute left-3 top-3 text-slate-400" size={18} />
+                                    <Play className="absolute left-3 top-3 text-slate-600" size={18} />
                                     <input
                                         type="text"
                                         required
-                                        className="w-full p-2.5 pl-10 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                        className="w-full p-3 pl-10 border border-iron-700 bg-iron-950 text-white rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none transition-all font-mono text-sm"
                                         placeholder="npm start"
                                         value={formData.start_command}
                                         onChange={(e) => setFormData({ ...formData, start_command: e.target.value })}
@@ -349,12 +360,14 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Build Command</label>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                                Build Command
+                            </label>
                             <div className="relative">
-                                <Terminal className="absolute left-3 top-3 text-slate-400" size={18} />
+                                <Terminal className="absolute left-3 top-3 text-slate-600" size={18} />
                                 <input
                                     type="text"
-                                    className="w-full p-2.5 pl-10 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-sm"
+                                    className="w-full p-3 pl-10 border border-iron-700 bg-iron-950 text-white rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none transition-all font-mono text-sm"
                                     placeholder="npm install && npm run build"
                                     value={formData.build_command}
                                     onChange={(e) => setFormData({ ...formData, build_command: e.target.value })}
@@ -365,15 +378,15 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                         <button
                             type="submit"
                             disabled={isDeploying}
-                            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 cursor-pointer mt-4"
+                            className="w-full bg-forge-600 hover:bg-forge-500 text-white font-bold py-4 px-4 rounded-xl shadow-[0_0_20px_rgba(234,88,12,0.2)] hover:shadow-[0_0_30px_rgba(234,88,12,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 cursor-pointer mt-6 uppercase tracking-widest border border-forge-500"
                         >
                             {isDeploying ? (
                                 <>
                                     <span className="animate-spin h-5 w-5 border-2 border-b-transparent border-white rounded-full"></span>
-                                    {isEditing ? "Updating..." : "Deploying..."}
+                                    {isEditing ? "INITIALIZING UPDATE..." : "INITIATING DEPLOYMENT..."}
                                 </>
                             ) : (
-                                <>{isEditing ? "Update Application" : "Deploy Application"}</>
+                                <>{isEditing ? "UPDATE CONFIGURATION" : "LAUNCH APPLICATION"}</>
                             )}
                         </button>
                     </form>

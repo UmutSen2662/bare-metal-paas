@@ -56,11 +56,17 @@ export default function AppDetailsPage() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-slate-500">Loading app details...</div>;
-    if (error || !app) return <div className="p-8 text-center text-red-500">{error || "App not found"}</div>;
+    if (loading)
+        return <div className="p-8 text-center text-slate-500 font-mono animate-pulse">Scanning frequencies...</div>;
+    if (error || !app)
+        return (
+            <div className="p-8 text-center text-status-error font-mono border border-status-error/20 bg-status-error/10 rounded m-8">
+                {error || "Target not found"}
+            </div>
+        );
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+        <div className="min-h-screen">
             <AppDetails app={app} onDelete={handleDelete} onEdit={openEditAppModal} />
         </div>
     );

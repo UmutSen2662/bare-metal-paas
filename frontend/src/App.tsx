@@ -43,7 +43,7 @@ export default function App() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+        <div className="min-h-screen w-full bg-iron-950 text-slate-300 font-sans selection:bg-forge-500 selection:text-white">
             <Navbar onOpenNew={openNewAppModal} />
 
             {/* 
