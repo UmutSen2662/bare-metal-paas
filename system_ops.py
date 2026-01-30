@@ -10,6 +10,29 @@ from database import AppModel, get_apps
 MISE_PATH = shutil.which("mise") or "/usr/local/bin/mise"
 
 
+class LockManager:
+    def __init__(self, app_name: str):
+        self.lock_file = f"/tmp/bmp_deploy_{app_name}.lock"
+
+    def acquire(self):
+        if os.path.exists(self.lock_file):
+            raise Exception("Deployment already in progress for this app")
+        # Atomic creation not strictly guaranteed by open 'w', but sufficient for this scale
+        # Using 'x' for exclusive creation (fails if exists) is better
+        try:
+            with open(self.lock_file, "x") as f:
+                f.write(str(os.getpid()))
+        except FileExistsError:
+             raise Exception("Deployment already in progress for this app")
+
+    def release(self):
+        if os.path.exists(self.lock_file):
+            os.remove(self.lock_file)
+            
+    def is_locked(self):
+        return os.path.exists(self.lock_file)
+
+
 def run_command(command: str, cwd=None, env=None) -> str:
     try:
         result = subprocess.run(
@@ -186,7 +209,11 @@ def remove_systemd_service(name: str):
 def get_service_status(name: str) -> str:
     """
     Returns 'running' if the systemd service is active, 'stopped' otherwise.
+    Returns 'deploying' if the lock file exists.
     """
+    if LockManager(name).is_locked():
+        return "deploying"
+
     service_name = f"{name}.service"
     try:
         # systemctl is-active returns 0 if active, non-zero otherwise.
@@ -258,24 +285,30 @@ def redeploy_app(app: AppModel) -> str:
     """
     Orchestrates a full redeploy: Pull -> Config -> Install -> Build -> Restart Service
     """
-    logs = f"Starting redeploy for {app.name}...\n"
+    lock = LockManager(app.name)
+    lock.acquire()
     
-    # 1. Clone/Pull
-    logs += clone_or_pull(app)
-    
-    # 2. Mise Config
-    logs += configure_mise(app)
-    
-    # 3. Install Dependencies
-    logs += install_dependencies(app)
-    
-    # 4. Build
-    logs += build_app(app)
-    
-    # 5. Service (Systemd) - this restarts the service
-    logs += create_systemd_service(app)
-    
-    return logs
+    try:
+        logs = f"Starting redeploy for {app.name}...\n"
+        
+        # 1. Clone/Pull
+        logs += clone_or_pull(app)
+        
+        # 2. Mise Config
+        logs += configure_mise(app)
+        
+        # 3. Install Dependencies
+        logs += install_dependencies(app)
+        
+        # 4. Build
+        logs += build_app(app)
+        
+        # 5. Service (Systemd) - this restarts the service
+        logs += create_systemd_service(app)
+        
+        return logs
+    finally:
+        lock.release()
 
 
 def start_service(name: str):

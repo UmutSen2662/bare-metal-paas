@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, BackgroundTasks
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -34,9 +34,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# Config
-BASE_DOMAIN = os.getenv("BASE_DOMAIN", "paas.local")
+# Config - Initialized from env, but can be overridden by DB
+DEFAULT_BASE_DOMAIN = os.getenv("BASE_DOMAIN", "paas.local")
 DASHBOARD_DOMAIN = os.getenv("DASHBOARD_DOMAIN")
+
+
+def get_base_domain():
+    return database.get_setting("base_domain", DEFAULT_BASE_DOMAIN)
 
 
 class DeployRequest(BaseModel):
@@ -61,7 +65,121 @@ def get_apps():
 
 @app.get("/api/config")
 def get_config():
-    return {"base_domain": BASE_DOMAIN}
+    return {"base_domain": get_base_domain()}
+
+
+@app.post("/api/config")
+def post_config(config: dict):
+    if "base_domain" in config:
+        database.set_setting("base_domain", config["base_domain"])
+        # Update Caddy because base domain changed
+        try:
+            system_ops.update_caddy_config()
+        except Exception as e:
+            print(f"Warning: Failed to update Caddy after domain change: {e}")
+    return {"message": "Config updated"}
+
+
+@app.get("/api/export")
+def export_config():
+    try:
+        apps = database.get_apps()
+        return {
+            "version": "1.0",
+            "base_domain": get_base_domain(),
+            "apps": [app.dict() for app in apps]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/validate-config")
+def validate_config(config: dict):
+    if config.get("version") != "1.0":
+        raise HTTPException(status_code=400, detail="Unsupported configuration version")
+    
+    if not isinstance(config.get("apps"), list):
+         raise HTTPException(status_code=400, detail="Invalid apps list")
+
+    return {"message": "Configuration is valid", "app_count": len(config.get("apps", []))}
+
+
+def redeploy_all_apps(apps_data: list):
+    print(f"Starting background redeploy for {len(apps_data)} apps...")
+    for app_data in apps_data:
+        try:
+            # We need to fetch the full object again to be safe or construct it
+            app_name = app_data.get("name")
+            print(f"Redeploying {app_name}...")
+            
+            # Ensure user exists first (in case import happened on clean system)
+            try:
+                system_ops.create_app_user(app_name)
+            except Exception as e:
+                print(f"Error ensuring user for {app_name}: {e}")
+
+            # Get fresh model from DB
+            app_model = database.get_app_by_name(app_name)
+            if app_model:
+                system_ops.redeploy_app(app_model)
+                print(f"Successfully redeployed {app_name}")
+            else:
+                print(f"Skipping {app_name}, not found in DB")
+                
+        except Exception as e:
+            print(f"Failed to redeploy {app_data.get('name')}: {e}")
+            traceback.print_exc()
+    print("Background redeployment complete.")
+
+
+@app.post("/api/import")
+def import_config(config: dict, background_tasks: BackgroundTasks, redeploy: bool = False):
+    try:
+        if config.get("version") != "1.0":
+            raise HTTPException(status_code=400, detail="Unsupported configuration version")
+        
+        if "base_domain" in config:
+            database.set_setting("base_domain", config["base_domain"])
+        
+        apps = config.get("apps", [])
+        for app_data in apps:
+            # 1. ID: Ignore imported ID to avoid primary key conflicts
+            app_data.pop("id", None)
+            
+            # 2. Port: Ignore imported port to avoid collisions on this system
+            app_data.pop("port", None)
+            
+            # Check if app exists to decide on port strategy
+            existing_app = database.get_app_by_name(app_data["name"])
+            
+            if not existing_app:
+                # New App: Must assign a fresh, available port on THIS system
+                app_data["port"] = system_ops.find_available_port()
+                # Note: If existing_app is True, we leave port as None. 
+                # database.upsert_app handles None by preserving the existing DB value.
+
+            # 3. Token: We allow the imported token to overwrite (or set) the DB value.
+            # This ensures GitHub webhooks linked to this config continue working.
+            
+            app = database.AppModel(**app_data)
+            database.upsert_app(app)
+        
+        try:
+            system_ops.update_caddy_config()
+        except Exception as e:
+            print(f"Warning: Failed to update Caddy after import: {e}")
+        
+        msg = f"Successfully imported {len(apps)} apps."
+        
+        if redeploy and len(apps) > 0:
+            background_tasks.add_task(redeploy_all_apps, apps)
+            msg += " Redeployment started in background."
+        else:
+            msg += " Please redeploy them to ensure they are fully set up."
+            
+        return {"message": msg}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/system-stats")

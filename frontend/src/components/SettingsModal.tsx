@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Settings, Download, Upload, FileJson, CheckCircle2, X, Save } from "lucide-react";
 import { Modal } from "./ui/Modal";
 import { Input } from "./ui/Input";
@@ -11,6 +11,7 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+    const queryClient = useQueryClient();
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [baseDomain, setBaseDomain] = useState("");
@@ -33,19 +34,76 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }, [config]);
 
     const handleUpdateDomain = async () => {
-        console.log("Updating base domain to:", baseDomain);
-        // API call will go here
+        try {
+            const res = await fetch("/api/config", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ base_domain: baseDomain }),
+            });
+            if (!res.ok) throw new Error("Failed to update base domain");
+            
+            await queryClient.invalidateQueries({ queryKey: ["config"] });
+            alert("Base domain updated successfully!");
+        } catch (error) {
+            console.error("Update failed:", error);
+            alert("Update failed: " + (error instanceof Error ? error.message : "Unknown error"));
+        }
     };
 
     const handleExport = async () => {
-        console.log("Triggering export...");
-        // API call will go here
+        const confirmExport = confirm(
+            "About to export system configuration.\n\n" +
+            "NOTE: This export contains app configurations (names, repos, commands) but DOES NOT include:\n" +
+            "• Environment variables (.env files)\n" +
+            "• SSH keys or Git credentials\n\n" +
+            "Make sure you back up your secrets separately."
+        );
+        if (!confirmExport) return;
+
+        try {
+            const res = await fetch("/api/export");
+            if (!res.ok) throw new Error("Failed to export configuration");
+            
+            const data = await res.json();
+            const blob = new Blob([JSON.stringify(data, null, 4)], { type: "application/json" });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+            link.href = url;
+            link.download = `bmp-export-${timestamp}.json`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Export failed:", error);
+            alert("Export failed: " + (error instanceof Error ? error.message : "Unknown error"));
+        }
     };
 
     const validateFile = async (file: File): Promise<boolean> => {
-        console.log("Validating file:", file.name);
-        // Backend validation check will go here
-        return true;
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            
+            const res = await fetch("/api/validate-config", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                alert("Validation failed: " + (err.detail || "Invalid configuration"));
+                return false;
+            }
+            return true;
+        } catch (e) {
+            alert("Failed to parse or validate file.");
+            return false;
+        }
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,8 +126,44 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
     const handleRestore = async () => {
         if (!selectedFile) return;
-        console.log("Restoring system from:", selectedFile);
-        // API call will go here
+        
+        const confirmRestore = confirm(
+            "⚠️ SYSTEM RESTORE ⚠️\n\n" +
+            "This will MERGE the imported configuration with your current system:\n" +
+            "• Existing apps (matching names) will be UPDATED.\n" +
+            "• New apps will be ADDED.\n" +
+            "• Current apps not in the file will REMAIN untouched.\n\n" +
+            "REMINDER: Secrets (.env) and SSH keys are NOT restored.\n\n" +
+            "Proceed?"
+        );
+        if (!confirmRestore) return;
+
+        const shouldRedeploy = confirm("Do you want to automatically redeploy all imported apps? This will clone, build, and start them in the background.");
+
+        try {
+            const text = await selectedFile.text();
+            const data = JSON.parse(text);
+            
+            const res = await fetch(`/api/import?redeploy=${shouldRedeploy}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+            
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || "Failed to restore configuration");
+            }
+            
+            const result = await res.json();
+            alert(result.message);
+            onClose();
+            // Refresh the page or trigger a query invalidation to show new apps
+            window.location.reload();
+        } catch (error) {
+            console.error("Restore failed:", error);
+            alert("Restore failed: " + (error instanceof Error ? error.message : "Unknown error"));
+        }
     };
 
     const validateDomainName = (domain: string) => {

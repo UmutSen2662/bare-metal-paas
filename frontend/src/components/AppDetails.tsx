@@ -41,6 +41,9 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
         refetchInterval: 2000,
     });
 
+    const isRunning = app?.status === "running";
+    const isDeploying = app?.status === "deploying";
+
     // 2. Live Logs
     const { data: logsData } = useQuery<{ logs: string }>({
         queryKey: ["app-logs", initialApp.name],
@@ -71,7 +74,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
     };
 
     const handleAction = async (action: "redeploy" | "start" | "stop") => {
-        if (isLoading) return;
+        if (isLoading || isDeploying) return;
 
         setIsLoading(action);
         try {
@@ -97,15 +100,21 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                     <h1 className="text-4xl font-display font-bold text-white uppercase tracking-wide">{app.name}</h1>
                     <div className="flex items-center gap-2 p-2.5 bg-iron-900 border border-iron-800 rounded-full">
                         <span className={`relative flex h-2 w-2`}>
-                            {app.status === "running" && (
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75"></span>
+                            {isDeploying ? (
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-forge-500 animate-pulse shadow-[0_0_8px_rgba(249,115,22,0.6)]"></span>
+                            ) : isRunning ? (
+                                <>
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green shadow-[var(--shadow-success)]"></span>
+                                </>
+                            ) : (
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red shadow-[var(--shadow-error)]"></span>
                             )}
-                            <span
-                                className={`relative inline-flex rounded-full h-2 w-2 ${app.status === "running" ? "bg-green shadow-[var(--shadow-success)]" : "bg-red shadow-[var(--shadow-error)]"}`}
-                            ></span>
                         </span>
                         <span
-                            className={`text-[10px] font-mono font-bold uppercase tracking-widest ${app.status === "running" ? "text-green" : "text-red"}`}
+                            className={`text-[10px] font-mono font-bold uppercase tracking-widest ${
+                                isDeploying ? "text-forge-500" : isRunning ? "text-green" : "text-red"
+                            }`}
                         >
                             {app.status}
                         </span>
@@ -125,23 +134,23 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                         onClick={() => handleAction("redeploy")}
                         variant="secondary"
                         size="md"
-                        disabled={!!isLoading}
+                        disabled={!!isLoading || isDeploying}
                         className="flex items-center gap-2 uppercase text-xs tracking-wider hover:text-forge-500 hover:border-forge-500/50"
                     >
-                        {isLoading === "redeploy" ? (
+                        {isLoading === "redeploy" || isDeploying ? (
                             <Loader2 size={16} className="animate-spin" />
                         ) : (
                             <RefreshCw size={16} />
                         )}
-                        Redeploy
+                        {isDeploying ? "Building..." : "Redeploy"}
                     </Button>
 
-                    {app.status === "running" ? (
+                    {isRunning ? (
                         <Button
                             onClick={() => handleAction("stop")}
                             variant="secondary"
                             size="md"
-                            disabled={!!isLoading}
+                            disabled={!!isLoading || isDeploying}
                             className="flex items-center gap-2 uppercase text-xs tracking-wider hover:border-red/50 hover:text-red"
                         >
                             {isLoading === "stop" ? (
@@ -156,7 +165,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                             onClick={() => handleAction("start")}
                             variant="secondary"
                             size="md"
-                            disabled={!!isLoading}
+                            disabled={!!isLoading || isDeploying}
                             className="flex items-center gap-2 uppercase text-xs tracking-wider hover:border-green/50 hover:text-green"
                         >
                             {isLoading === "start" ? (
@@ -174,6 +183,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                         onClick={() => onEdit(app)}
                         variant="secondary"
                         size="md"
+                        disabled={isDeploying}
                         className="flex items-center gap-2 uppercase text-xs tracking-wider hover:border-forge-500/50 hover:text-forge-500"
                     >
                         <Edit size={16} /> Edit
@@ -184,6 +194,7 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                         }}
                         variant="secondary"
                         size="md"
+                        disabled={isDeploying}
                         className="flex items-center gap-2 uppercase text-xs tracking-wider hover:border-red/50 hover:text-red"
                     >
                         <Trash2 size={16} /> Delete

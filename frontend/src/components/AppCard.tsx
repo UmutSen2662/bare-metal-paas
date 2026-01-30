@@ -14,12 +14,13 @@ interface AppCardProps {
 export function AppCard({ app, onClick }: AppCardProps) {
     const appUrl = `http://${app.domain}`;
     const isRunning = app.status === "running";
+    const isDeploying = app.status === "deploying";
     const queryClient = useQueryClient();
     const [isLoading, setIsLoading] = useState<string | null>(null);
 
     const handleAction = async (e: React.MouseEvent, action: "redeploy" | "start" | "stop") => {
         e.stopPropagation();
-        if (isLoading) return;
+        if (isLoading || isDeploying) return;
 
         setIsLoading(action);
         try {
@@ -44,20 +45,28 @@ export function AppCard({ app, onClick }: AppCardProps) {
                 "group relative overflow-hidden transition-all duration-300",
                 "border-iron-800 bg-iron-900",
                 "flex flex-col p-0 gap-0",
+                isDeploying && "opacity-80 border-forge-500/30"
             )}
         >
             {/* Header */}
             <CardHeader className="flex-row items-center justify-between p-4 my-0 bg-iron-950/30 border-iron-800/50 pointer-events-none">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded bg-forge-900/20 border border-forge-900/50 text-forge-500 transition-colors">
-                        <Box size={18} />
+                    <div className={cn(
+                        "p-2 rounded border transition-colors",
+                        isDeploying 
+                            ? "bg-forge-900/40 border-forge-500/50 text-forge-400 animate-pulse" 
+                            : "bg-forge-900/20 border-forge-900/50 text-forge-500"
+                    )}>
+                        {isDeploying ? <Loader2 size={18} className="animate-spin" /> : <Box size={18} />}
                     </div>
                     <h3 className="font-display text-lg font-bold text-white tracking-wide uppercase">{app.name}</h3>
                 </div>
                 {/* Traffic Light */}
                 <div className="flex items-center gap-2">
                     <span className="relative flex h-2.5 w-2.5">
-                        {isRunning ? (
+                        {isDeploying ? (
+                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-forge-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></span>
+                        ) : isRunning ? (
                             <>
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green shadow-[var(--shadow-success)]"></span>
@@ -92,10 +101,10 @@ export function AppCard({ app, onClick }: AppCardProps) {
                     <Button
                         onClick={(e) => handleAction(e, "redeploy")}
                         variant="secondary"
-                        disabled={!!isLoading}
+                        disabled={!!isLoading || isDeploying}
                         className="gap-2 h-auto py-2.5 group/btn hover:text-forge-500 hover:border-forge-500/50"
                     >
-                        {isLoading === "redeploy" ? (
+                        {isLoading === "redeploy" || isDeploying ? (
                             <Loader2 size={14} className="animate-spin" />
                         ) : (
                             <RefreshCw
@@ -103,14 +112,16 @@ export function AppCard({ app, onClick }: AppCardProps) {
                                 className="group-hover/btn:rotate-180 transition-transform duration-500"
                             />
                         )}
-                        <span className="text-xs uppercase font-bold tracking-wider">Redeploy</span>
+                        <span className="text-xs uppercase font-bold tracking-wider">
+                            {isDeploying ? "Building..." : "Redeploy"}
+                        </span>
                     </Button>
 
                     {isRunning ? (
                         <Button
                             onClick={(e) => handleAction(e, "stop")}
                             variant="secondary"
-                            disabled={!!isLoading}
+                            disabled={!!isLoading || isDeploying}
                             className="gap-2 h-auto py-2.5 hover:border-red/50 hover:text-red"
                         >
                             {isLoading === "stop" ? (
@@ -124,7 +135,7 @@ export function AppCard({ app, onClick }: AppCardProps) {
                         <Button
                             onClick={(e) => handleAction(e, "start")}
                             variant="secondary"
-                            disabled={!!isLoading}
+                            disabled={!!isLoading || isDeploying}
                             className="gap-2 h-auto py-2.5 hover:border-green/50 hover:text-green"
                         >
                             {isLoading === "start" ? (

@@ -60,6 +60,36 @@ def init_db():
             token = uuid.uuid4().hex
             cursor.execute("UPDATE apps SET deploy_token = ? WHERE id = ?", (token, row["id"]))
 
+    # Create settings table
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        );
+    """
+    )
+
+    conn.commit()
+    conn.close()
+
+
+def get_setting(key: str, default: Optional[str] = None) -> Optional[str]:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
+    row = cursor.fetchone()
+    conn.close()
+    return row["value"] if row else default
+
+
+def set_setting(key: str, value: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (key, value),
+    )
     conn.commit()
     conn.close()
 
