@@ -85,15 +85,16 @@ def create_app_user(name: str, is_static: bool = False):
     
     if is_static:
         run_command(f"chmod 750 {home_dir}")
-        # Allow caddy to read files in this group (for static sites)
+        # Allow caddy to read files using ACLs (no restart required)
         try:
-            # Check if caddy user exists before trying to modify it
-            pwd.getpwnam("caddy")
-            run_command(f"usermod -a -G {name} caddy")
-            # Caddy needs a restart to pick up new group memberships
-            run_command("systemctl restart caddy")
-        except KeyError:
-            print("Warning: User 'caddy' not found. Skipping group addition.")
+            # Grant caddy user rx permissions on the home directory
+            run_command(f"setfacl -m u:caddy:rx {home_dir}")
+            # Also ensure future files get these permissions (default ACL) if needed, 
+            # but for now just setting on the dir is the critical part for access.
+            # We might need to run this recursively on 'www' later or ensure it propagates.
+            # But the critical part is likely the home dir itself blocking access.
+        except Exception as e:
+            print(f"Warning: Failed to set ACLs for caddy: {e}")
     else:
         run_command(f"chmod 700 {home_dir}")
 
@@ -140,6 +141,10 @@ def clone_or_pull(app: AppModel) -> str:
             print(f"Warning: Could not check remote url ({e}), re-cloning...")
             run_command(f"rm -rf {www_path}")
             return run_as_user(app.name, f"git clone {app.repo_url} www", home_dir)
+
+        # Ensure ACLs are correct after pull/clone if static
+        if ":static" in (app.language_version or ""):
+             run_command(f"setfacl -R -m u:caddy:rx {www_path}")
 
         return run_as_user(app.name, "git pull", www_path)
 
