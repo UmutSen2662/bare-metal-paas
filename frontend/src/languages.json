@@ -1,13 +1,33 @@
 [
   {
+    "id": "node-24",
+    "value": "node@24",
+    "label": "Node.js 24"
+  },
+  {
+    "id": "node-24-static",
+    "value": "node@24:static",
+    "label": "Node.js 24 (Static)"
+  },
+  {
+    "id": "node-22",
+    "value": "node@22",
+    "label": "Node.js 22"
+  },
+  {
+    "id": "node-22-static",
+    "value": "node@22:static",
+    "label": "Node.js 22 (Static)"
+  },
+  {
     "id": "node-20",
     "value": "node@20",
     "label": "Node.js 20"
   },
   {
-    "id": "node-18",
-    "value": "node@18",
-    "label": "Node.js 18"
+    "id": "node-20-static",
+    "value": "node@20:static",
+    "label": "Node.js 20 (Static)"
   },
   {
     "id": "node-lts",
@@ -15,14 +35,34 @@
     "label": "Node.js LTS"
   },
   {
-    "id": "go-1-21",
-    "value": "go@1.21",
-    "label": "Go 1.21"
+    "id": "node-lts-static",
+    "value": "node@lts:static",
+    "label": "Node.js LTS (Static)"
   },
   {
-    "id": "go-1-20",
-    "value": "go@1.20",
-    "label": "Go 1.20"
+    "id": "go-1-25",
+    "value": "go@1.25",
+    "label": "Go 1.25"
+  },
+  {
+    "id": "go-1-24",
+    "value": "go@1.24",
+    "label": "Go 1.24"
+  },
+  {
+    "id": "go-1-23",
+    "value": "go@1.23",
+    "label": "Go 1.23"
+  },
+  {
+    "id": "python-3-14",
+    "value": "python@3.14",
+    "label": "Python 3.14"
+  },
+  {
+    "id": "python-3-13",
+    "value": "python@3.13",
+    "label": "Python 3.13"
   },
   {
     "id": "python-3-12",

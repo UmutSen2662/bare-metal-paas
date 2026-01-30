@@ -44,6 +44,28 @@ echo -e "${BLUE}Installing System Dependencies...${NC}"
 apt update
 apt install -y git python3 python3-venv python3-pip curl debian-keyring debian-archive-keyring apt-transport-https
 
+# 3.5 Check/Setup Swap (Optional for <4GB RAM)
+TOTAL_MEM_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+if [ "$TOTAL_MEM_KB" -lt 4000000 ]; then
+    echo -e "${BLUE}Detected <4GB RAM.${NC}"
+    if [ ! -f /swapfile ]; then
+        read -p "Create 4GB Swap file to prevent OOM during builds? (Recommended) [y/N]: " CREATE_SWAP
+        if [[ "$CREATE_SWAP" =~ ^[Yy]$ ]]; then
+            echo -e "${BLUE}Creating 4GB Swap file...${NC}"
+            fallocate -l 4G /swapfile
+            chmod 600 /swapfile
+            mkswap /swapfile
+            swapon /swapfile
+            echo '/swapfile none swap sw 0 0' >> /etc/fstab
+            echo -e "${GREEN}Swap created.${NC}"
+        else
+             echo -e "${BLUE}Skipping swap creation.${NC}"
+        fi
+    else
+        echo -e "${BLUE}Swap file already exists.${NC}"
+    fi
+fi
+
 # 4. Install Caddy (if not present)
 if ! command -v caddy &> /dev/null; then
     echo -e "${BLUE}Installing Caddy...${NC}"

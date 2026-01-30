@@ -1,13 +1,13 @@
 [
   {
-    "id": "react",
-    "name": "Static / React (Vite)",
-    "description": "Single Page App served via HTTP server",
+    "id": "static",
+    "name": "Static / Vite",
+    "description": "Single Page App served directly via Caddy (Ultra Fast)",
     "icon": "Box",
     "config": {
-      "language_version": "node@20",
+      "language_version": "node@24:static",
       "build_command": "npm install && npm run build",
-      "start_command": "npx serve -s dist -l $PORT"
+      "start_command": "dist"
     }
   },
   {
@@ -16,7 +16,7 @@
     "description": "Standard Node.js server (npm start)",
     "icon": "Terminal",
     "config": {
-      "language_version": "node@20",
+      "language_version": "node@24",
       "build_command": "npm install",
       "start_command": "npm start"
     }
@@ -24,10 +24,10 @@
   {
     "id": "python-fastapi",
     "name": "Python (FastAPI/Uvicorn)",
-    "description": "Python 3.12 with Uvicorn",
+    "description": "Python 3.14 with Uvicorn",
     "icon": "Play",
     "config": {
-      "language_version": "python@3.12",
+      "language_version": "python@3.14",
       "build_command": "pip install -r requirements.txt",
       "start_command": "python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
     }
@@ -35,45 +35,35 @@
   {
     "id": "python-flask",
     "name": "Python (Flask/Gunicorn)",
-    "description": "Python 3.12 with Gunicorn",
+    "description": "Python 3.14 with Gunicorn",
     "icon": "Play",
     "config": {
-      "language_version": "python@3.12",
+      "language_version": "python@3.14",
       "build_command": "pip install -r requirements.txt",
       "start_command": "gunicorn app:app -b 0.0.0.0:$PORT"
     }
   },
-  {
-    "id": "go",
-    "name": "Go (Golang)",
-    "description": "Go 1.21 binary build",
-    "icon": "Box",
-    "config": {
-      "language_version": "go@1.21",
-      "build_command": "go build -o app",
-      "start_command": "./app"
+    {
+      "id": "go",
+      "name": "Go (Golang)",
+      "description": "Go 1.25 binary build",
+      "icon": "Box",
+      "config": {
+        "language_version": "go@1.25",
+        "build_command": "go build -o app",
+        "start_command": "./app"
+      }
+    },
+    {
+      "id": "pocketbase",
+      "name": "PocketBase (Go)",
+      "description": "Open Source Backend (Go 1.25)",
+      "icon": "Database",
+      "config": {
+        "language_version": "go@1.25",
+        "build_command": "go build -o pocketbase",
+        "start_command": "./pocketbase serve --http=0.0.0.0:$PORT"
+      }
     }
-  },
-  {
-    "id": "vue",
-    "name": "Vue.js (Vite)",
-    "description": "Vue SPA served via HTTP server",
-    "icon": "Layers",
-    "config": {
-      "language_version": "node@20",
-      "build_command": "npm install && npm run build",
-      "start_command": "npx serve -s dist -l $PORT"
-    }
-  },
-  {
-    "id": "next-start",
-    "name": "Next.js (SSR)",
-    "description": "Next.js Standalone or Default Start",
-    "icon": "Layers",
-    "config": {
-      "language_version": "node@20",
-      "build_command": "npm install && npm run build",
-      "start_command": "npm start"
-    }
-  }
-]
+  ]
+  

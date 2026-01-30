@@ -108,6 +108,15 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Check for destructive Repo URL change
+        const isRepoChanged = isEditing && initialData && formData.repo_url !== initialData.repo_url;
+        if (isRepoChanged) {
+            const confirmed = confirm(
+                "WARNING: You are changing the Repository URL. This will perform a full directory wipe on the server to ensure a clean clone. Any local data (like PocketBase pb_data or uploads) will be permanently deleted. Are you sure you want to proceed?"
+            );
+            if (!confirmed) return;
+        }
+
         let finalDomain = formData.domain;
 
         if (!useCustomDomain) {
@@ -290,11 +299,11 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
+                    <div className="flex flex-col gap-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">
                             Language & Version
                         </label>
-                        <div className="relative mt-2">
+                        <div className="relative">
                             <Box className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={20} />
                             <select
                                 className="w-full p-3 pl-10 border border-iron-800 bg-iron-950 text-slate-200 rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none appearance-none font-mono text-sm transition-all"
@@ -315,7 +324,7 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                     </div>
 
                     <Input
-                        label="Start Command"
+                        label={formData.language_version.includes("static") ? "Directory" : "Start Command"}
                         icon={<Play size={20} />}
                         type="text"
                         required

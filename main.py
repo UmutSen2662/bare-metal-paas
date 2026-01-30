@@ -112,14 +112,9 @@ def redeploy_all_apps(apps_data: list):
             app_name = app_data.get("name")
             print(f"Redeploying {app_name}...")
             
-            # Ensure user exists first (in case import happened on clean system)
-            try:
-                system_ops.create_app_user(app_name)
-            except Exception as e:
-                print(f"Error ensuring user for {app_name}: {e}")
-
             # Get fresh model from DB
             app_model = database.get_app_by_name(app_name)
+            
             if app_model:
                 system_ops.redeploy_app(app_model)
                 print(f"Successfully redeployed {app_name}")
@@ -299,7 +294,8 @@ def deploy(req: DeployRequest):
 
         # 2. User
         try:
-            system_ops.create_app_user(app_model.name)
+            is_static = ":static" in (app_model.language_version or "")
+            system_ops.create_app_user(app_model.name, is_static)
             logs += f"User {app_model.name} ensured.\n"
         except Exception as e:
             raise Exception(f"Failed to create user: {e}")
@@ -385,6 +381,7 @@ def start_app_endpoint(name: str):
     
     try:
         system_ops.start_service(name)
+        system_ops.update_caddy_config()
         return {"message": "Service started"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -397,6 +394,7 @@ def stop_app_endpoint(name: str):
     
     try:
         system_ops.stop_service(name)
+        system_ops.update_caddy_config()
         return {"message": "Service stopped"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -439,4 +437,4 @@ if os.path.exists(frontend_path):
         return FileResponse(os.path.join(frontend_path, "index.html"))
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=1323)
+    uvicorn.run(app, host="127.0.0.1", port=1323)

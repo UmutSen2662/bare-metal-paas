@@ -66,7 +66,7 @@ def run_as_user(username: str, command: str, cwd: str) -> str:
     return run_command(full_cmd, cwd=cwd)
 
 
-def create_app_user(name: str):
+def create_app_user(name: str, is_static: bool = False):
     try:
         pwd.getpwnam(name)
         # User exists, ensure perms
@@ -74,7 +74,18 @@ def create_app_user(name: str):
         run_command(f"useradd -m -d /home/{name} -s /bin/bash {name}")
 
     home_dir = f"/home/{name}"
-    run_command(f"chmod 700 {home_dir}")
+    
+    if is_static:
+        run_command(f"chmod 750 {home_dir}")
+        # Allow caddy to read files in this group (for static sites)
+        try:
+            # Check if caddy user exists before trying to modify it
+            pwd.getpwnam("caddy")
+            run_command(f"usermod -a -G {name} caddy")
+        except KeyError:
+            print("Warning: User 'caddy' not found. Skipping group addition.")
+    else:
+        run_command(f"chmod 700 {home_dir}")
 
 
 def remove_app_user(name: str):
@@ -126,7 +137,9 @@ def clone_or_pull(app: AppModel) -> str:
 def configure_mise(app: AppModel) -> str:
     www_path = f"/home/{app.name}/www"
     # mise expects "node 18" not "node@18" in .tool-versions
-    version_line = app.language_version.replace("@", " ")
+    # Strip :static suffix if present
+    clean_version = app.language_version.split(":")[0]
+    version_line = clean_version.replace("@", " ")
     cmd = f"echo '{version_line}' > .tool-versions"
     return run_as_user(app.name, cmd, www_path)
 
@@ -148,7 +161,8 @@ def build_app(app: AppModel) -> str:
     # We wrap the build command in bash -c so chained commands (&&) run inside the mise environment
     # shlex.quote() is used on the inner command to prevent it from being split incorrectly
     quoted_build = shlex.quote(app.build_command)
-    cmd = f"{MISE_PATH} exec {app.language_version} -- bash -c {quoted_build}"
+    clean_version = app.language_version.split(":")[0]
+    cmd = f"{MISE_PATH} exec {clean_version} -- bash -c {quoted_build}"
     return run_as_user(app.name, cmd, www_path)
 
 
@@ -170,13 +184,30 @@ WantedBy=multi-user.target
 
 def create_systemd_service(app: AppModel) -> str:
     service_path = f"/etc/systemd/system/{app.name}.service"
-    content = SERVICE_TEMPLATE.format(
-        name=app.name, 
-        language_version=app.language_version, 
-        start_command=app.start_command, 
-        port=app.port,
-        mise_path=MISE_PATH
-    )
+    
+    clean_version = app.language_version.split(":")[0]
+    
+    if ":static" in app.language_version:
+        # Static App: Just keep the service alive for status checks
+        exec_start = "/usr/bin/sleep infinity"
+    else:
+        # Standard App: Run the server via Mise
+        exec_start = f"{MISE_PATH} exec {clean_version} -- {app.start_command}"
+
+    content = f"""[Unit]
+Description={app.name} {'(Static)' if ':static' in app.language_version else ''}
+
+[Service]
+User={app.name}
+Group={app.name}
+WorkingDirectory=/home/{app.name}/www
+Environment=PORT={app.port}
+ExecStart={exec_start}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+"""
 
     with open(service_path, "w") as f:
         f.write(content)
@@ -263,10 +294,29 @@ def update_caddy_config():
 
     # 2. Add App Routes
     for app in apps:
-        if app.domain and app.port:
-            caddyfile_lines.append(f"{app.domain} {{")
+        if not app.domain:
+            continue
+            
+        # Check status: Only serve if running or deploying (to keep old config during deploy)
+        status = get_service_status(app.name)
+        if status == "stopped":
+            continue
+
+        caddyfile_lines.append(f"{app.domain} {{")
+        
+        if app.language_version and ":static" in app.language_version:
+            # Static Site Config
+            # app.start_command acts as the relative path to dist/build folder
+            web_root = f"/home/{app.name}/www/{app.start_command}"
+            caddyfile_lines.append(f"    root * {web_root}")
+            caddyfile_lines.append("    file_server")
+            # SPA Fallback: try file, try directory, fall back to index.html
+            caddyfile_lines.append("    try_files {path} {path}/ /index.html")
+        elif app.port:
+            # Standard Reverse Proxy
             caddyfile_lines.append(f"    reverse_proxy localhost:{app.port}")
-            caddyfile_lines.append("}")
+            
+        caddyfile_lines.append("}")
 
     caddyfile_content = "\n".join(caddyfile_lines)
 
@@ -291,6 +341,11 @@ def redeploy_app(app: AppModel) -> str:
     try:
         logs = f"Starting redeploy for {app.name}...\n"
         
+        # 0. Ensure User & Permissions (Self-healing)
+        is_static = ":static" in (app.language_version or "")
+        create_app_user(app.name, is_static)
+        logs += f"User {app.name} ensured.\n"
+
         # 1. Clone/Pull
         logs += clone_or_pull(app)
         
