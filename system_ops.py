@@ -1,5 +1,6 @@
 import os
 import pwd
+import grp
 import subprocess
 import socket
 import requests
@@ -71,7 +72,13 @@ def create_app_user(name: str, is_static: bool = False):
         pwd.getpwnam(name)
         # User exists, ensure perms
     except KeyError:
-        run_command(f"useradd -m -d /home/{name} -s /bin/bash {name}")
+        try:
+            grp.getgrnam(name)
+            # Group exists, use it
+            run_command(f"useradd -m -d /home/{name} -s /bin/bash -g {name} {name}")
+        except KeyError:
+            # Group doesn't exist, create it (default behavior)
+            run_command(f"useradd -m -d /home/{name} -s /bin/bash {name}")
 
     home_dir = f"/home/{name}"
     
@@ -82,6 +89,8 @@ def create_app_user(name: str, is_static: bool = False):
             # Check if caddy user exists before trying to modify it
             pwd.getpwnam("caddy")
             run_command(f"usermod -a -G {name} caddy")
+            # Caddy needs a restart to pick up new group memberships
+            run_command("systemctl restart caddy")
         except KeyError:
             print("Warning: User 'caddy' not found. Skipping group addition.")
     else:
