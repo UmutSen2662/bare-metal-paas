@@ -41,7 +41,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 body: JSON.stringify({ base_domain: baseDomain }),
             });
             if (!res.ok) throw new Error("Failed to update base domain");
-            
+
             await queryClient.invalidateQueries({ queryKey: ["config"] });
             alert("Base domain updated successfully!");
         } catch (error) {
@@ -53,26 +53,26 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const handleExport = async () => {
         const confirmExport = confirm(
             "About to export system configuration.\n\n" +
-            "NOTE: This export contains app configurations (names, repos, commands) but DOES NOT include:\n" +
-            "• Environment variables (.env files)\n" +
-            "• SSH keys or Git credentials\n\n" +
-            "Make sure you back up your secrets separately."
+                "NOTE: This export contains app configurations (names, repos, commands) but DOES NOT include:\n" +
+                "• Environment variables (.env files)\n" +
+                "• SSH keys or Git credentials\n\n" +
+                "Make sure you back up your secrets separately.",
         );
         if (!confirmExport) return;
 
         try {
             const res = await fetch("/api/export");
             if (!res.ok) throw new Error("Failed to export configuration");
-            
+
             const data = await res.json();
             const blob = new Blob([JSON.stringify(data, null, 4)], { type: "application/json" });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
-            
+
             const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
             link.href = url;
             link.download = `bmp-export-${timestamp}.json`;
-            
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -87,7 +87,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         try {
             const text = await file.text();
             const data = JSON.parse(text);
-            
+
             const res = await fetch("/api/validate-config", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -126,35 +126,37 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
     const handleRestore = async () => {
         if (!selectedFile) return;
-        
+
         const confirmRestore = confirm(
             "⚠️ SYSTEM RESTORE ⚠️\n\n" +
-            "This will MERGE the imported configuration with your current system:\n" +
-            "• Existing apps (matching names) will be UPDATED.\n" +
-            "• New apps will be ADDED.\n" +
-            "• Current apps not in the file will REMAIN untouched.\n\n" +
-            "REMINDER: Secrets (.env) and SSH keys are NOT restored.\n\n" +
-            "Proceed?"
+                "This will MERGE the imported configuration with your current system:\n" +
+                "• Existing apps (matching names) will be UPDATED.\n" +
+                "• New apps will be ADDED.\n" +
+                "• Current apps not in the file will REMAIN untouched.\n\n" +
+                "REMINDER: Secrets (.env) and SSH keys are NOT restored.\n\n" +
+                "Proceed?",
         );
         if (!confirmRestore) return;
 
-        const shouldRedeploy = confirm("Do you want to automatically redeploy all imported apps? This will clone, build, and start them in the background.");
+        const shouldRedeploy = confirm(
+            "Do you want to automatically redeploy all imported apps? This will clone, build, and start them in the background.",
+        );
 
         try {
             const text = await selectedFile.text();
             const data = JSON.parse(text);
-            
+
             const res = await fetch(`/api/import?redeploy=${shouldRedeploy}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
-            
+
             if (!res.ok) {
                 const err = await res.json();
                 throw new Error(err.detail || "Failed to restore configuration");
             }
-            
+
             const result = await res.json();
             alert(result.message);
             onClose();
@@ -251,12 +253,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     <h4 className="text-sm font-bold text-slate-200 mb-1">Export Configuration</h4>
                                     <p className="text-xs text-slate-500">
                                         Download a full snapshot of your system configuration, including all apps and
-                                        settings.
+                                        settings.{" "}
+                                        <span className="text-red/80">
+                                            Does not include secrets, .env files, or credentials.
+                                        </span>
                                     </p>
                                 </div>
                                 <Button
                                     variant="secondary"
-                                    className="w-full gap-2 border-iron-700 hover:border-forge-500"
+                                    className="w-full gap-2 border-iron-700 hover:border-forge-500 mt-auto"
                                     onClick={handleExport}
                                 >
                                     <Download size={16} />
