@@ -6,6 +6,7 @@ import socket
 import requests
 import shlex
 import shutil
+import time
 from database import AppModel, get_apps
 
 MISE_PATH = shutil.which("mise") or "/usr/local/bin/mise"
@@ -329,15 +330,22 @@ def update_caddy_config():
 
     caddyfile_content = "\n".join(caddyfile_lines)
 
-    try:
-        resp = requests.post(
-            "http://localhost:2019/load", 
-            headers={"Content-Type": "text/caddyfile"},
-            data=caddyfile_content
-        )
-        resp.raise_for_status()
-    except Exception as e:
-        raise Exception(f"Failed to update Caddy: {e}")
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            resp = requests.post(
+                "http://localhost:2019/load", 
+                headers={"Content-Type": "text/caddyfile"},
+                data=caddyfile_content
+            )
+            resp.raise_for_status()
+            return # Success!
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"Failed to update Caddy (attempt {attempt+1}/{max_retries}): {e}. Retrying in 1s...")
+                time.sleep(1)
+            else:
+                raise Exception(f"Failed to update Caddy after {max_retries} attempts: {e}")
 
 
 def redeploy_app(app: AppModel) -> str:
