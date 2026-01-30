@@ -108,11 +108,14 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Check for destructive Repo URL change
+        // Check for destructive changes (Repo URL or Language Version)
         const isRepoChanged = isEditing && initialData && formData.repo_url !== initialData.repo_url;
-        if (isRepoChanged) {
+        const isLangChanged = isEditing && initialData && formData.language_version !== initialData.language_version;
+        
+        if (isRepoChanged || isLangChanged) {
+            const reason = isRepoChanged ? "Repository URL" : "Language Version";
             const confirmed = confirm(
-                "WARNING: You are changing the Repository URL. This will perform a full directory wipe on the server to ensure a clean clone. Any local data (like PocketBase pb_data or uploads) will be permanently deleted. Are you sure you want to proceed?"
+                `WARNING: You are changing the ${reason}. This will perform a full directory wipe on the server to ensure a clean environment. Any local data (like PocketBase pb_data, node_modules, or uploads) will be permanently deleted. Are you sure you want to proceed?`
             );
             if (!confirmed) return;
         }

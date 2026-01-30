@@ -271,6 +271,15 @@ def deploy(req: DeployRequest):
 
         if existing_app:
             app_model = existing_app
+            
+            # Check if language version changed
+            if app_model.language_version != req.language_version:
+                logs += f"Language version changed from {app_model.language_version} to {req.language_version}. Wiping directory for clean slate...\n"
+                try:
+                    system_ops.run_command(f"rm -rf /home/{app_model.name}/www")
+                except Exception as e:
+                    logs += f"Warning: Failed to wipe directory: {e}\n"
+
             app_model.repo_url = req.repo_url
             app_model.domain = req.domain
             app_model.build_command = req.build_command
