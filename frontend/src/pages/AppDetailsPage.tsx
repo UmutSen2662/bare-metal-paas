@@ -64,9 +64,5 @@ export default function AppDetailsPage() {
             </div>
         );
 
-    return (
-        <div className="min-h-screen">
-            <AppDetails app={app} onDelete={handleDelete} onEdit={openEditAppModal} />
-        </div>
-    );
+    return <AppDetails app={app} onDelete={handleDelete} onEdit={openEditAppModal} />;
 }
