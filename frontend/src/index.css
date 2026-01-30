@@ -25,9 +25,12 @@
     --shadow-success-strong: 0 0 8px color-mix(in srgb, var(--color-green), transparent 20%);
     --shadow-error: 0 0 8px color-mix(in srgb, var(--color-red), transparent 40%);
 
-    --shadow-forge-sm: 0 0 10px color-mix(in srgb, var(--color-forge-600), transparent 80%);
-    --shadow-forge-md: 0 0 20px color-mix(in srgb, var(--color-forge-600), transparent 70%);
-    --shadow-forge-lg: 0 0 30px color-mix(in srgb, var(--color-forge-600), transparent 60%);
+    --shadow-forge-sm: 0 0 5px color-mix(in srgb, var(--color-forge-600), transparent 60%);
+    --shadow-forge-md: 0 0 10px color-mix(in srgb, var(--color-forge-600), transparent 40%);
+    --shadow-forge-lg: 0 0 15px color-mix(in srgb, var(--color-forge-600), transparent 20%);
+    --drop-shadow-forge-sm: 0 0 5px color-mix(in srgb, var(--color-forge-600), transparent 60%);
+    --drop-shadow-forge-md: 0 0 10px color-mix(in srgb, var(--color-forge-600), transparent 40%);
+    --drop-shadow-forge-lg: 0 0 15px color-mix(in srgb, var(--color-forge-600), transparent 20%);
 
     /* PATTERNS */
     --color-hazard-stripe: color-mix(in srgb, var(--color-forge-500), transparent 90%);

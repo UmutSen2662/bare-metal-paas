@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ServerCrash, Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { App } from "../types";
@@ -7,6 +7,7 @@ import { SystemStats } from "../components/SystemStats";
 import { AppCard } from "../components/AppCard";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { cn } from "../lib/utils";
 
 interface DashboardContext {
     openNewAppModal: () => void;
@@ -72,42 +73,56 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {apps.length === 0 ? (
-                    <div className="text-center py-20 bg-iron-900/50 rounded-xl border border-dashed border-iron-700 backdrop-blur-sm">
-                        <div className="w-20 h-20 bg-iron-800/50 text-iron-600 rounded-full flex items-center justify-center mx-auto mb-6 border border-iron-700">
-                            <ServerCrash size={40} />
-                        </div>
-                        <h3 className="text-xl font-display font-bold text-white mb-2 tracking-wide">SYSTEM IDLE</h3>
-                        <p className="text-slate-500 max-w-sm mx-auto mb-8 font-mono">
-                            No active workloads detected. Initialize a new deployment to begin.
-                        </p>
-                        <Button onClick={openNewAppModal} variant="primary" size="lg">
-                            INITIALIZE DEPLOYMENT
-                        </Button>
-                    </div>
-                ) : filteredApps.length === 0 ? (
-                    <div className="text-center py-20 bg-iron-900/50 rounded-xl border border-dashed border-iron-700 backdrop-blur-sm">
-                        <div className="w-16 h-16 bg-iron-800/50 text-iron-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-iron-700">
-                            <Search size={32} />
-                        </div>
-                        <h3 className="text-lg font-display font-bold text-white mb-1 tracking-wide">NO MATCHES</h3>
-                        <p className="text-slate-500 font-mono text-sm">No applications match "{searchQuery}"</p>
-                        <Button
-                            onClick={() => setSearchQuery("")}
-                            variant="secondary"
-                            size="sm"
-                            className="mt-4 text-xs uppercase tracking-wider"
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {filteredApps.map((app) => (
+                        <AppCard key={app.id || app.name} app={app} onClick={(a) => navigate(`/apps/${a.name}`)} />
+                    ))}
+
+                    {/* Ghost Card - Initialize Deployment (Only shown when not searching) */}
+                    {!searchQuery && (
+                        <button
+                            onClick={openNewAppModal}
+                            className={cn(
+                                "group relative flex flex-col items-center justify-center gap-4 p-8 rounded-xl",
+                                "border-2 border-dashed border-iron-800 bg-iron-900/20",
+                                "hover:bg-iron-900/40 hover:border-forge-500/50 hover:shadow-[0_0_30px_rgba(249,115,22,0.05)]",
+                                "transition-all duration-200 cursor-pointer",
+                            )}
                         >
-                            Clear Search
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filteredApps.map((app) => (
-                            <AppCard key={app.id || app.name} app={app} onClick={(a) => navigate(`/apps/${a.name}`)} />
-                        ))}
-                    </div>
-                )}
+                            <div className="w-16 h-16 rounded-full bg-iron-800/50 flex items-center justify-center border border-iron-700 group-hover:border-forge-500/50 group-hover:bg-iron-800 transition-colors">
+                                <Plus
+                                    size={32}
+                                    className="text-iron-500 group-hover:text-forge-500 transition-colors"
+                                />
+                            </div>
+                            <div className="text-center">
+                                <h3 className="font-display font-bold text-white mb-1 tracking-wide uppercase">
+                                    Deploy App
+                                </h3>
+                            </div>
+                        </button>
+                    )}
+
+                    {filteredApps.length === 0 && searchQuery && (
+                        <div className="col-span-full py-12 text-center">
+                            <div className="w-16 h-16 bg-iron-800/50 text-iron-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-iron-700">
+                                <Search size={32} />
+                            </div>
+                            <h3 className="text-lg font-display font-bold text-white mb-1 tracking-wide uppercase">
+                                No Matches
+                            </h3>
+                            <p className="text-slate-500 font-mono text-sm">No applications match "{searchQuery}"</p>
+                            <Button
+                                onClick={() => setSearchQuery("")}
+                                variant="secondary"
+                                size="sm"
+                                className="mt-4 text-xs uppercase tracking-wider"
+                            >
+                                Clear Search
+                            </Button>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

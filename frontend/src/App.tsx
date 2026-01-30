@@ -5,10 +5,12 @@ import "./index.css";
 
 import { Navbar } from "./components/Navbar";
 import { DeployModal } from "./components/DeployModal";
+import { SettingsModal } from "./components/SettingsModal";
 import type { App } from "./types";
 
 export default function App() {
     const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [modalInitialData, setModalInitialData] = useState<App | null>(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -41,7 +43,7 @@ export default function App() {
 
     return (
         <div className="min-h-screen w-full bg-iron-950 text-slate-300 font-sans selection:bg-forge-500 selection:text-white">
-            <Navbar onOpenNew={openNewAppModal} />
+            <Navbar onOpenSettings={() => setIsSettingsModalOpen(true)} />
 
             {/* 
           Outlet context allows us to pass functions down to pages 
@@ -55,6 +57,11 @@ export default function App() {
                 baseDomain={baseDomain}
                 onDeploySuccess={handleDeploySuccess}
                 initialData={modalInitialData}
+            />
+
+            <SettingsModal
+                isOpen={isSettingsModalOpen}
+                onClose={() => setIsSettingsModalOpen(false)}
             />
         </div>
     );

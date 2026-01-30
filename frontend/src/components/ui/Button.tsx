@@ -14,7 +14,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                     "inline-flex items-center justify-center rounded-lg font-bold transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none focus:outline-none focus:ring-2 focus:ring-forge-500/50 cursor-pointer",
                     // Variants
                     variant === "primary" &&
-                        "bg-forge-600 text-white font-display hover:bg-forge-500 hover:shadow-[var(--shadow-forge-lg)] uppercase tracking-wider",
+                        "bg-forge-600 text-white font-display hover:bg-forge-500 hover:shadow-forge-lg uppercase tracking-wider",
                     variant === "secondary" &&
                         "bg-iron-800 border border-iron-700 text-slate-300 hover:border-forge-500 hover:text-white",
                     variant === "ghost" && "bg-transparent text-slate-400 hover:text-forge-500 hover:bg-forge-500/10",

@@ -179,7 +179,9 @@ export function AppDetails({ app: initialApp, onDelete, onEdit }: AppDetailsProp
                         <Edit size={16} /> Edit
                     </Button>
                     <Button
-                        onClick={() => onDelete(app.name)}
+                        onClick={() => {
+                            onDelete(app.name);
+                        }}
                         variant="secondary"
                         size="md"
                         className="flex items-center gap-2 uppercase text-xs tracking-wider hover:border-red/50 hover:text-red"

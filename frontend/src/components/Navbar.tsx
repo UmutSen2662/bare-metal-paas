@@ -1,25 +1,28 @@
-import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Button } from "./ui/Button";
+import { Settings } from "lucide-react";
 
 interface NavbarProps {
-    onOpenNew: () => void;
+    onOpenSettings: () => void;
 }
 
-export function Navbar({ onOpenNew }: NavbarProps) {
+export function Navbar({ onOpenSettings }: NavbarProps) {
     return (
         <nav className="bg-iron-950/80 border-b border-iron-800 px-6 flex items-center justify-between sticky top-0 z-50 backdrop-blur-md">
-            <Link to="/" className="flex items-center gap-3 group">
-                <img src="/BMP.svg" alt="BMP Logo" className="w-10 h-10" />
+            <Link to="/" className="flex items-center gap-3 group py-4 hover:drop-shadow-forge-lg group">
+                <img src="/BMP-Clear.svg" alt="BMP Logo" className="w-10 h-10 group-hover:drop-shadow-forge-lg" />
                 <h1 className="text-xl font-display font-bold text-white tracking-widest uppercase">
                     Bare Metal <span className="text-forge-500 text-lg">PaaS</span>
                 </h1>
             </Link>
 
-            <div className="flex items-center gap-6 py-4">
-                <Button onClick={onOpenNew} variant="primary" size="md" className="flex items-center gap-2">
-                    <Plus size={18} /> NEW APP
-                </Button>
+            <div className="flex items-center gap-4">
+                <button
+                    onClick={onOpenSettings}
+                    className="p-2 hover:bg-iron-800 rounded-lg text-slate-400 hover:text-white transition-all group cursor-pointer"
+                    title="System Settings"
+                >
+                    <Settings size={20} className="group-hover:rotate-90 transition-transform duration-500" />
+                </button>
             </div>
         </nav>
     );
