@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus, Box, Play, Terminal, Search, ChevronDown, ChevronUp, Layers, Edit2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import presetsData from "../presets.json";
@@ -16,6 +16,12 @@ const ICON_MAP: Record<string, React.ElementType> = {
     Layers,
 };
 
+const defaultPreset = presetsData.find((p) => p.id === "node")?.config || {
+    language_version: "node@24",
+    build_command: "npm install && npm run build",
+    start_command: "npm start",
+};
+
 interface DeployModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -24,28 +30,41 @@ interface DeployModalProps {
     initialData?: App | null;
 }
 
+type DeployData = Pick<App, "name" | "repo_url" | "domain" | "language_version" | "build_command" | "start_command">;
+
 export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, initialData }: DeployModalProps) {
-    const [useCustomDomain, setUseCustomDomain] = useState(false);
+    const [useCustomDomain, setUseCustomDomain] = useState(() => {
+        if (initialData) {
+            return !initialData.domain.endsWith(baseDomain);
+        }
+        return false;
+    });
 
     // Preset UI State
     const [isPresetsOpen, setIsPresetsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
-    const defaultPreset = presetsData.find((p) => p.id === "node")?.config || {
-        language_version: "node@24",
-        build_command: "npm install && npm run build",
-        start_command: "npm start",
-    };
-
-    const [formData, setFormData] = useState({
-        name: "",
-        repo_url: "",
-        domain: "",
-        ...defaultPreset,
+    const [formData, setFormData] = useState(() => {
+        if (initialData) {
+            return {
+                name: initialData.name,
+                repo_url: initialData.repo_url,
+                domain: initialData.domain,
+                language_version: initialData.language_version,
+                build_command: initialData.build_command,
+                start_command: initialData.start_command,
+            };
+        }
+        return {
+            name: "",
+            repo_url: "",
+            domain: "",
+            ...defaultPreset,
+        };
     });
 
     const deployMutation = useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (data: DeployData) => {
             const res = await fetch("/api/deploy", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -62,33 +81,6 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
             onClose();
         },
     });
-
-    // Load initial data for editing
-    useEffect(() => {
-        if (isOpen && initialData) {
-            setFormData({
-                name: initialData.name,
-                repo_url: initialData.repo_url,
-                domain: initialData.domain,
-                language_version: initialData.language_version,
-                build_command: initialData.build_command,
-                start_command: initialData.start_command,
-            });
-
-            // Determine if it was a custom domain
-            setUseCustomDomain(!initialData.domain.endsWith(baseDomain));
-        } else if (isOpen && !initialData) {
-            // Reset
-            setFormData({
-                name: "",
-                repo_url: "",
-                domain: "",
-                ...defaultPreset,
-            });
-            setUseCustomDomain(false);
-            deployMutation.reset(); // Clear previous errors
-        }
-    }, [isOpen, initialData, baseDomain]);
 
     const applyPreset = (presetId: string) => {
         const preset = presetsData.find((p) => p.id === presetId);

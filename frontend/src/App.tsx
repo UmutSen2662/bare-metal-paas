@@ -52,6 +52,7 @@ export default function App() {
             <Outlet context={{ openNewAppModal, openEditAppModal, refreshTrigger }} />
 
             <DeployModal
+                key={isDeployModalOpen ? (modalInitialData ? `edit-${modalInitialData.id}` : "deploy-new") : "closed"}
                 isOpen={isDeployModalOpen}
                 onClose={() => setIsDeployModalOpen(false)}
                 baseDomain={baseDomain}

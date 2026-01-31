@@ -100,7 +100,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 return false;
             }
             return true;
-        } catch (e) {
+        } catch (error) {
+            console.error("File validation error:", error);
             alert("Failed to parse or validate file.");
             return false;
         }
