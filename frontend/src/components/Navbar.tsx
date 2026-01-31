@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Settings } from "lucide-react";
+import { Settings, Github } from "lucide-react";
 
 interface NavbarProps {
     onOpenSettings: () => void;
@@ -16,6 +16,15 @@ export function Navbar({ onOpenSettings }: NavbarProps) {
             </Link>
 
             <div className="flex items-center gap-4">
+                <a
+                    href="https://github.com/UmutSen2662/bare-metal-paas"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 hover:bg-iron-800 rounded-lg text-slate-400 hover:text-white transition-all group cursor-pointer"
+                    title="GitHub Repository"
+                >
+                    <Github size={20} />
+                </a>
                 <button
                     onClick={onOpenSettings}
                     className="p-2 hover:bg-iron-800 rounded-lg text-slate-400 hover:text-white transition-all group cursor-pointer"

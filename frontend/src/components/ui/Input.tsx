@@ -9,11 +9,6 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type, label, icon, ...props }, ref) => {
     const inputElement = (
         <div className="relative w-full group">
-            {icon && (
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-forge-500 transition-colors pointer-events-none flex items-center justify-center">
-                    {icon}
-                </div>
-            )}
             <input
                 type={type}
                 className={cn(
@@ -27,6 +22,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type,
                 ref={ref}
                 {...props}
             />
+            {icon && (
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-forge-500 transition-colors pointer-events-none flex items-center justify-center">
+                    {icon}
+                </div>
+            )}
         </div>
     );
 

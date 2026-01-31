@@ -62,11 +62,11 @@ export default function Dashboard() {
                         </h2>
                     </div>
 
-                    <div className="relative w-full max-w-xs">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+                    <div className="w-full max-w-xs">
                         <Input
+                            icon={<Search size={14} />}
                             placeholder="SEARCH APPS..."
-                            className="pl-9 h-9 text-xs"
+                            className="h-9 text-xs"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />

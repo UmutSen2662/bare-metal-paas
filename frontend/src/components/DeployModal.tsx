@@ -31,13 +31,17 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
     const [isPresetsOpen, setIsPresetsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
+    const defaultPreset = presetsData.find((p) => p.id === "node")?.config || {
+        language_version: "node@24",
+        build_command: "npm install && npm run build",
+        start_command: "npm start",
+    };
+
     const [formData, setFormData] = useState({
         name: "",
         repo_url: "",
         domain: "",
-        language_version: "node@20",
-        build_command: "npm install && npm run build",
-        start_command: "npm start",
+        ...defaultPreset,
     });
 
     const deployMutation = useMutation({
@@ -79,9 +83,7 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                 name: "",
                 repo_url: "",
                 domain: "",
-                language_version: "node@20",
-                build_command: "npm install && npm run build",
-                start_command: "npm start",
+                ...defaultPreset,
             });
             setUseCustomDomain(false);
             deployMutation.reset(); // Clear previous errors
@@ -111,11 +113,11 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
         // Check for destructive changes (Repo URL or Language Version)
         const isRepoChanged = isEditing && initialData && formData.repo_url !== initialData.repo_url;
         const isLangChanged = isEditing && initialData && formData.language_version !== initialData.language_version;
-        
+
         if (isRepoChanged || isLangChanged) {
             const reason = isRepoChanged ? "Repository URL" : "Language Version";
             const confirmed = confirm(
-                `WARNING: You are changing the ${reason}. This will perform a full directory wipe on the server to ensure a clean environment. Any local data (like PocketBase pb_data, node_modules, or uploads) will be permanently deleted. Are you sure you want to proceed?`
+                `WARNING: You are changing the ${reason}. This will perform a full directory wipe on the server to ensure a clean environment. Any local data (like PocketBase pb_data, node_modules, or uploads) will be permanently deleted. Are you sure you want to proceed?`,
             );
             if (!confirmed) return;
         }
