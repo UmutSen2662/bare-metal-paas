@@ -1,6 +1,6 @@
 # Bare Metal PaaS
 
-**Your own private Heroku.** A lightweight, self-hosted platform for deploying Node.js, Python, Go, and Static applications directly on your Linux server.
+**Your own private PaaS platform.** A lightweight, self-hosted platform for deploying Node.js, Python, Go, and Static applications directly on your Linux server.
 
 <img src="frontend/public/BMP.svg" alt="Bare Metal PaaS Logo" width="150" />
 
