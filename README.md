@@ -2,7 +2,7 @@
 
 **Your own private Heroku.** A lightweight, self-hosted platform for deploying Node.js, Python, Go, and Static applications directly on your Linux server.
 
-![Dashboard Preview](frontend/public/BMP.svg)
+<img src="frontend/public/BMP.svg" alt="Bare Metal PaaS Logo" width="150" />
 
 ## 📖 What is this?
 
