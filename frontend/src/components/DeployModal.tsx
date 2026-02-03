@@ -117,7 +117,9 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
         let finalDomain = formData.domain;
 
         if (!useCustomDomain) {
-            if (!formData.domain.includes(baseDomain)) {
+            if (formData.domain === "" || formData.domain === baseDomain) {
+                finalDomain = baseDomain;
+            } else if (!formData.domain.includes(baseDomain)) {
                 finalDomain = `${formData.domain}.${baseDomain}`;
             }
         }
@@ -250,10 +252,9 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                             <div className="flex">
                                 <Input
                                     type="text"
-                                    required
                                     className="rounded-r-none border-r-0 text-right pr-1"
                                     placeholder="subdomain"
-                                    value={formData.domain.replace(`.${baseDomain}`, "")}
+                                    value={formData.domain === baseDomain ? "" : formData.domain.replace(`.${baseDomain}`, "")}
                                     onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
                                 />
                                 <span className="inline-flex items-center px-3 rounded-r-md bg-iron-800 text-slate-400 text-sm font-mono">

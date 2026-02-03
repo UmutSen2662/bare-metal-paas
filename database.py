@@ -141,6 +141,28 @@ def get_app_by_name(name: str) -> Optional[AppModel]:
     return None
 
 
+def get_app_by_domain(domain: str) -> Optional[AppModel]:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM apps WHERE domain = ?", (domain,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        return AppModel(
+            id=row["id"],
+            name=row["name"],
+            repo_url=row["repo_url"],
+            domain=row["domain"],
+            port=row["port"],
+            build_command=row["build_command"],
+            start_command=row["start_command"],
+            language_version=row["language_version"],
+            deploy_token=row["deploy_token"]
+        )
+    return None
+
+
 def get_app_by_token(token: str) -> Optional[AppModel]:
     conn = get_db_connection()
     cursor = conn.cursor()

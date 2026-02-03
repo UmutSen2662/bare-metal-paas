@@ -263,6 +263,14 @@ def delete_app(name: str):
 
 @app.post("/api/deploy")
 def deploy(req: DeployRequest):
+    # 0. Domain Conflict Check
+    existing_domain_owner = database.get_app_by_domain(req.domain)
+    if existing_domain_owner and existing_domain_owner.name != req.name:
+        raise HTTPException(
+            status_code=409, 
+            detail=f"Domain '{req.domain}' is already in use by application '{existing_domain_owner.name}'"
+        )
+
     logs = ""
     is_new_app = False
     try:
