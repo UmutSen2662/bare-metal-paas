@@ -380,7 +380,16 @@ def redeploy_app(app: AppModel) -> str:
         # 4. Build
         logs += build_app(app)
         
-        # 5. Service (Systemd) - this restarts the service
+        # 5. Ensure permissions for static files (so Caddy can read them)
+        if is_static:
+            logs += "Setting permissions for static files...\n"
+            try:
+                # Grant caddy user rx permissions recursively on the www directory
+                run_command(f"setfacl -R -m u:caddy:rx /home/{app.name}/www")
+            except Exception as e:
+                logs += f"Warning: Failed to set ACLs for caddy: {e}\n"
+
+        # 6. Service (Systemd) - this restarts the service
         logs += create_systemd_service(app)
         
         return logs

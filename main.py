@@ -345,6 +345,14 @@ def deploy(req: DeployRequest):
         except Exception as e:
             raise Exception(str(e))
 
+        # 5.5 Ensure permissions for static files
+        if is_static:
+            logs += "Setting permissions for static files...\n"
+            try:
+                system_ops.run_command(f"setfacl -R -m u:caddy:rx /home/{app_model.name}/www")
+            except Exception as e:
+                logs += f"Warning: Failed to set ACLs for caddy: {e}\n"
+
         # 6. Service (Systemd)
         try:
             out = system_ops.create_systemd_service(app_model)
