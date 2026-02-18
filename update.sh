@@ -14,7 +14,7 @@ git pull
 
 # 2. Update Backend Dependencies
 echo -e "${BLUE}Updating Python dependencies...${NC}"
-./venv/bin/pip install -r requirements.txt
+./backend/venv/bin/pip install -r backend/requirements.txt
 
 # 3. Rebuild Frontend
 echo -e "${BLUE}Rebuilding Frontend...${NC}"

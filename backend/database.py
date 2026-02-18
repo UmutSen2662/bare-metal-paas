@@ -3,7 +3,8 @@ from pydantic import BaseModel
 from typing import Optional, List
 import uuid
 
-DB_PATH = "./paas.db"
+import os
+DB_PATH = os.path.join(os.path.dirname(__file__), "paas.db")
 
 
 class AppModel(BaseModel):

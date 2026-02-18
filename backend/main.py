@@ -441,7 +441,7 @@ def webhook_deploy(token: str):
 
 
 # --- Frontend Serving (Must be last) ---
-frontend_path = os.path.join(os.path.dirname(__file__), "frontend/dist")
+frontend_path = os.path.join(os.path.dirname(__file__), "../frontend/dist")
 
 if os.path.exists(frontend_path):
     # Mount assets (JS/CSS)

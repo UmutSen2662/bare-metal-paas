@@ -93,10 +93,10 @@ echo -e "${BLUE}Using Mise at: ${MISE_BIN}${NC}"
 
 # 6. Python Setup
 echo -e "${BLUE}Setting up Backend...${NC}"
-if [ ! -d "venv" ]; then
-    python3 -m venv venv
+if [ ! -d "backend/venv" ]; then
+    python3 -m venv backend/venv
 fi
-./venv/bin/pip install -r requirements.txt
+./backend/venv/bin/pip install -r backend/requirements.txt
 
 # 7. Frontend Build
 echo -e "${BLUE}Building Frontend...${NC}"
@@ -114,12 +114,12 @@ After=network.target
 
 [Service]
 User=root
-WorkingDirectory=$(pwd)
+WorkingDirectory=$(pwd)/backend
 Environment="BASE_DOMAIN=${APPS_DOMAIN}"
 Environment="DASHBOARD_DOMAIN=${DASHBOARD_DOMAIN}"
 Environment="ADMIN_USER=admin"
 Environment="ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}"
-ExecStart=$(pwd)/venv/bin/python main.py
+ExecStart=$(pwd)/backend/venv/bin/python main.py
 Restart=always
 
 [Install]
