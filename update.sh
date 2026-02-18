@@ -17,6 +17,12 @@ run_as_owner() {
     fi
 }
 
+# 0. Fix Permissions (Self-healing)
+if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+    echo -e "${BLUE}Ensuring file ownership for $SUDO_USER...${NC}"
+    chown -R "$SUDO_USER":"$(id -gn "$SUDO_USER")" .
+fi
+
 # 1. Pull latest code
 echo -e "${BLUE}Pulling latest changes from Git...${NC}"
 run_as_owner git pull
