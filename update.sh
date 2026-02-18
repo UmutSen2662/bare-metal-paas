@@ -14,6 +14,18 @@ git pull
 
 # 2. Update Backend Dependencies
 echo -e "${BLUE}Updating Python dependencies...${NC}"
+
+# Check for new venv location
+if [ ! -d "backend/venv" ]; then
+    echo -e "${BLUE}Creating missing virtual environment in backend/venv...${NC}"
+    python3 -m venv backend/venv
+fi
+
+# Check for legacy venv (cleanup suggestion)
+if [ -d "venv" ]; then
+    echo -e "${RED}Warning: Found legacy 'venv' in root. You can safely remove it with: rm -rf venv${NC}"
+fi
+
 ./backend/venv/bin/pip install -r backend/requirements.txt
 
 # 3. Rebuild Frontend
