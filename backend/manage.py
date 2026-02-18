@@ -72,12 +72,12 @@ def install():
         log("Caddy not found or failed to hash password. Please install Caddy first.", RED)
         sys.exit(1)
 
-    # 2. System Dependencies (Apt)
+    # 1. System Dependencies (Apt)
     log("Installing System Dependencies...")
     subprocess.check_call(['apt-get', 'update'])
     subprocess.check_call(['apt-get', 'install', '-y', 'git', 'curl', 'debian-keyring', 'debian-archive-keyring', 'apt-transport-https'])
 
-    # 3. Caddy Install
+    # 2. Caddy Install
     log("Installing Caddy...")
     if shutil.which('caddy') is None:
         subprocess.check_call(['curl', '-1sLf', 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key', '|', 'gpg', '--dearmor', '-o', '/usr/share/keyrings/caddy-stable-archive-keyring'], shell=True)
@@ -85,24 +85,14 @@ def install():
         subprocess.check_call(['apt-get', 'update'])
         subprocess.check_call(['apt-get', 'install', '-y', 'caddy'])
 
-    # 4. Mise Install
+    # 3. Mise Install
     log("Installing Mise (Runtime Manager)...")
     if shutil.which('mise') is None:
         subprocess.check_call(['curl', 'https://mise.run', '|', 'sh'], shell=True)
         # Add to path for this session
         os.environ["PATH"] += f":{os.path.expanduser('~/.local/bin')}"
 
-    # 5. Node.js (via Mise)
-    log("Installing Node.js...")
-    mise_bin = os.path.expanduser('~/.local/bin/mise')
-    if not os.path.exists(mise_bin):
-         mise_bin = "/usr/local/bin/mise" # Fallback
-         
-    # run_as_owner([mise_bin, 'use', '--global', 'node@20']) # Usually done in user context
-    # For install, we might just need it for building frontend. 
-    # Let's assume 'update' will handle the build.
-
-    # 6. Service Setup
+    # 4. Service Setup
     log("Creating Systemd Service...")
     
     service_content = f"""[Unit]
@@ -142,7 +132,6 @@ def update():
         uid = int(subprocess.check_output(['id', '-u', sudo_user]).strip())
         gid = int(subprocess.check_output(['id', '-g', sudo_user]).strip())
         
-        # chown -R .
         for root, dirs, files in os.walk('.'):
              for d in dirs:
                  os.chown(os.path.join(root, d), uid, gid)
@@ -151,16 +140,13 @@ def update():
 
     # 1. Dependencies
     log("Updating Python dependencies...")
-    # Assume venv exists (Makefile ensures it)
     pip_bin = "./backend/venv/bin/pip"
     run_as_owner([pip_bin, 'install', '-r', 'backend/requirements.txt'])
 
     # 2. Frontend
     log("Building Frontend...")
     mise_bin = "/usr/local/bin/mise" 
-    # Try different locations for mise if not found
     if not os.path.exists(mise_bin):
-         # Try user's home
          if sudo_user:
              user_home = os.path.expanduser(f"~{sudo_user}")
              mise_bin = f"{user_home}/.local/bin/mise"
@@ -170,26 +156,23 @@ def update():
         run_as_owner([mise_bin, 'exec', 'node@20', '--', 'npm', 'install', '--prefix', 'frontend'])
         run_as_owner([mise_bin, 'exec', 'node@20', '--', 'npm', 'run', 'build', '--prefix', 'frontend'])
     else:
-        log("Mise not found, skipping frontend build (or install node manually)", RED)
+        log("Mise not found, manual node install required.", RED)
 
     # 3. Service
     log("Restarting Service...")
-    # Auto-migration of service paths if needed
     service_file = "/etc/systemd/system/bare-metal-paas.service"
+    
+    # Auto-migration of service paths
     if os.path.exists(service_file):
         with open(service_file, 'r') as f:
             content = f.read()
         
         new_content = content
-        # Check and fix WorkingDirectory
         if "WorkingDirectory=" in content and "/backend" not in content.split("WorkingDirectory=")[1].split("\n")[0]:
              log("Migrating systemd WorkingDirectory...")
-             # This is a simple replace, might be brittle.
-             # Better to parse, but for now simple checks.
              cwd = os.getcwd()
              new_content = new_content.replace(f"WorkingDirectory={cwd}", f"WorkingDirectory={cwd}/backend")
         
-        # Check and fix ExecStart
         if "ExecStart=" in content and "/backend/venv" not in content.split("ExecStart=")[1].split("\n")[0]:
              log("Migrating systemd ExecStart...")
              cwd = os.getcwd()
@@ -202,14 +185,7 @@ def update():
 
     subprocess.check_call(['systemctl', 'restart', 'bare-metal-paas'])
     
-    # 4. Caddy Sync involves parsing service file environment variables
-    # For now, let's rely on the service being restarted to pick up env vars, 
-    # but Caddyfile sync logic from update.sh is tricky to replicate perfectly without redundancy.
-    # Ideally main.py should have a 'sync-caddy' command.
-    # For this iteration, let's assume if the service starts, it updates Caddy via API? 
-    # No, Caddyfile needs to be written for the dashboard itself.
-    
-    # Re-implement Caddyfile syncing
+    # 4. Sync Caddyfile
     log("Syncing Caddyfile...")
     if os.path.exists(service_file):
         with open(service_file, 'r') as f:
@@ -247,10 +223,6 @@ def update():
 
 def dev():
     log("Starting Backend in Development Mode...")
-    # This usually runs as user, but accesses backend/venv
-    # If run via sudo make dev, might need to ensure venv permissions?
-    # dev.sh was: ./backend/venv/bin/python backend/main.py
-    
     python_bin = "./backend/venv/bin/python"
     subprocess.call([python_bin, "backend/main.py"])
 
