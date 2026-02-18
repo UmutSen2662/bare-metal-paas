@@ -53,6 +53,40 @@ run_as_owner /usr/local/bin/mise use --global node@20
 run_as_owner /usr/local/bin/mise exec node@20 -- npm install --prefix frontend
 run_as_owner /usr/local/bin/mise exec node@20 -- npm run build --prefix frontend
 
+# 3.5 Fix Service Paths (Migration to backend/)
+SERVICE_FILE="/etc/systemd/system/bare-metal-paas.service"
+if [ -f "$SERVICE_FILE" ]; then
+    # Fix WorkingDirectory
+    if ! grep -q "WorkingDirectory=.*/backend" "$SERVICE_FILE"; then
+         echo -e "${BLUE}Migrating systemd WorkingDirectory to backend/...${NC}"
+         # Append /backend to the line containing WorkingDirectory
+         if [ "$EUID" -ne 0 ]; then
+             sudo sed -i '/WorkingDirectory=/ s/$/\/backend/' "$SERVICE_FILE"
+         else
+             sed -i '/WorkingDirectory=/ s/$/\/backend/' "$SERVICE_FILE"
+         fi
+    fi
+
+    # Fix ExecStart venv path
+    if ! grep -q "ExecStart=.*/backend/venv" "$SERVICE_FILE"; then
+         echo -e "${BLUE}Migrating systemd ExecStart to backend/venv...${NC}"
+         # Replace /venv/ with /backend/venv/
+         # We use a pattern that matches the old path structure
+         if [ "$EUID" -ne 0 ]; then
+             sudo sed -i 's|/venv/bin/python|/backend/venv/bin/python|' "$SERVICE_FILE"
+         else
+             sed -i 's|/venv/bin/python|/backend/venv/bin/python|' "$SERVICE_FILE"
+         fi
+    fi
+     
+    # Reload if we changed anything (checking logs would be better but reloading always is safe enough here)
+    if [ "$EUID" -ne 0 ]; then
+        sudo systemctl daemon-reload
+    else
+        systemctl daemon-reload
+    fi
+fi
+
 # 4. Restart Service
 echo -e "${BLUE}Restarting Systemd Service...${NC}"
 # This MUST run as root. If script wasn't run as root, this will fail or prompt.
