@@ -43,27 +43,26 @@
       "start_command": "gunicorn app:app -b 0.0.0.0:$PORT"
     }
   },
-    {
-      "id": "go",
-      "name": "Go (Golang)",
-      "description": "Go 1.25 binary build",
-      "icon": "Box",
-      "config": {
-        "language_version": "go@1.25",
-        "build_command": "go build -o app",
-        "start_command": "./app"
-      }
-    },
-    {
-      "id": "pocketbase",
-      "name": "PocketBase (Go)",
-      "description": "Open Source Backend (Go 1.25)",
-      "icon": "Database",
-      "config": {
-        "language_version": "go@1.25",
-        "build_command": "go build -o pocketbase",
-        "start_command": "./pocketbase serve --http=0.0.0.0:$PORT"
-      }
+  {
+    "id": "go",
+    "name": "Go (Golang)",
+    "description": "Go 1.25 binary build",
+    "icon": "Box",
+    "config": {
+      "language_version": "go@1.25",
+      "build_command": "go build -o app",
+      "start_command": "./app"
     }
-  ]
-  
+  },
+  {
+    "id": "pocketbase",
+    "name": "PocketBase (Go)",
+    "description": "Open Source Backend (Go 1.25)",
+    "icon": "Database",
+    "config": {
+      "language_version": "go@1.25",
+      "build_command": "go build -o pocketbase",
+      "start_command": "./pocketbase serve --http=0.0.0.0:$PORT"
+    }
+  }
+]

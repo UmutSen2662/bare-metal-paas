@@ -1,0 +1,10 @@
+{
+  "editor.defaultFormatter": "fronterior.biome-monorepo",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports.biome": "explicit"
+  },
+  "[javascript][javascriptreact][typescript][typescriptreact][json][jsonc]": {
+    "editor.defaultFormatter": "fronterior.biome-monorepo"
+  }
+}

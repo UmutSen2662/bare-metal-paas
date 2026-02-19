@@ -154,6 +154,7 @@ def update():
     if os.path.exists(mise_bin):
         run_as_owner([mise_bin, 'use', '--global', 'node@20'])
         run_as_owner([mise_bin, 'exec', 'node@20', '--', 'npm', 'install', '--prefix', 'frontend'])
+        run_as_owner([mise_bin, 'exec', 'node@20', '--', 'npm', 'prune', '--prefix', 'frontend'])
         run_as_owner([mise_bin, 'exec', 'node@20', '--', 'npm', 'run', 'build', '--prefix', 'frontend'])
     else:
         log("Mise not found, manual node install required.", RED)
