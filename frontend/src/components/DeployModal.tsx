@@ -171,7 +171,6 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
                                     className="pl-9 bg-iron-950 text-white placeholder-slate-600"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    autoFocus
                                 />
                             </div>
 
@@ -228,9 +227,9 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
 
                     <div>
                         <div className="flex justify-between items-center mt-1 mb-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">
                                 Domain
-                            </label>
+                            </span>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="checkbox"
@@ -298,12 +297,13 @@ export function DeployModal({ isOpen, onClose, baseDomain, onDeploySuccess, init
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">
+                        <label htmlFor="language-select" className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">
                             Language & Version
                         </label>
                         <div className="relative">
                             <Box className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={20} />
                             <select
+                                id="language-select"
                                 className="w-full p-3 pl-10 border border-iron-800 bg-iron-950 text-slate-200 rounded-md focus:ring-1 focus:ring-forge-500 focus:border-forge-500 outline-none appearance-none font-mono text-sm transition-all"
                                 value={formData.language_version}
                                 onChange={(e) => setFormData({ ...formData, language_version: e.target.value })}

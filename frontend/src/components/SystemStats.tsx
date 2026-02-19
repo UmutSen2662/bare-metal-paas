@@ -86,9 +86,9 @@ export function SystemStats() {
     if (isLoading || !stats)
         return (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {[1, 2, 3].map((i) => (
+                {[1, 2, 3].map((id) => (
                     <div
-                        key={i}
+                        key={id}
                         className="bg-iron-900/80 backdrop-blur-md border border-iron-800 rounded-xl h-24 animate-pulse"
                     ></div>
                 ))}

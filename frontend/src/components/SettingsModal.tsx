@@ -286,7 +286,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     }}
                                     onDragLeave={() => setIsDragging(false)}
                                     onDrop={handleDrop}
-                                    onClick={() => fileInputRef.current?.click()}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            fileInputRef.current?.click();
+                                        }
+                                    }}
+                                    role="button"
+                                    tabIndex={0}
                                     className={`
                                         relative group cursor-pointer
                                         border-2 border-dashed rounded-lg p-4
